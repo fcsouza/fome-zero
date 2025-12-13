@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { signIn, useSession } from '@/lib/auth-client';
+import { signIn, useSession, type AuthUser } from '@/lib/auth-client';
 import { logger } from '@/lib/logger';
 import {
   toastDismiss,
@@ -37,7 +37,8 @@ export default function OngLoginPage() {
         toastError('Falha no login', result.error.message);
       } else {
         // Verificar se o usuário tem o role correto
-        if (result.data?.user?.role === 'ong') {
+        const user = result.data?.user as AuthUser | undefined;
+        if (user?.role === 'ong') {
           toastSuccess('Login realizado com sucesso! Redirecionando...');
           router.push('/dashboard/ong');
         } else {

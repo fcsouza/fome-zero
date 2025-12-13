@@ -59,6 +59,7 @@ export class UserService {
       email: user.email,
       emailVerified: user.emailVerified,
       image: user.image,
+      role: user.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       stripeCustomerId: user.stripeCustomerId,

@@ -34,6 +34,7 @@ export default function SignupPage() {
 
     try {
       const result = await signUp.email({
+        role: 'user',
         email,
         password,
         name,

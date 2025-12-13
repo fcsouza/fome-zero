@@ -185,7 +185,8 @@ export const auth = betterAuth({
       role: {
         type: 'string',
         required: true,
-        input: true, // Permite passar o role durante o signup
+        input: true,
+        returned: true, // Permite passar o role durante o signup
       },
     },
   },

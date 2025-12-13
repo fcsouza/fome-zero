@@ -13,9 +13,13 @@ export const authClient = createAuthClient({
     credentials: 'include',
   },
   plugins: [
-    inferAdditionalFields<{
-      role: string;
-    }>(),
+    inferAdditionalFields({
+      user: {
+        role: {
+          type: 'string',
+        },
+      },
+    }),
     stripeClient({
       subscription: true,
     }),
@@ -24,3 +28,15 @@ export const authClient = createAuthClient({
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;
+
+// Type helper para o retorno de signIn/signUp
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string | null;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
