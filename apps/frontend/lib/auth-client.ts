@@ -1,4 +1,5 @@
 import { stripeClient } from '@better-auth/stripe/client';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { createAuthClient } from 'better-auth/react';
 
@@ -12,6 +13,9 @@ export const authClient = createAuthClient({
     credentials: 'include',
   },
   plugins: [
+    inferAdditionalFields<{
+      role: string;
+    }>(),
     stripeClient({
       subscription: true,
     }),

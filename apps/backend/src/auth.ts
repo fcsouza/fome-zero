@@ -180,6 +180,31 @@ export const auth = betterAuth({
       subscription: subscriptionTable,
     },
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: 'string',
+        required: true,
+        input: true, // Permite passar o role durante o signup
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // Validar que o role seja 'doador' ou 'ong'
+          const role = user.role as string | undefined;
+          if (role && role !== 'doador' && role !== 'ong') {
+            throw new Error('Role must be either "doador" or "ong"');
+          }
+          // Retornar os dados do usuário
+          const userData = await Promise.resolve(user);
+          return { data: userData };
+        },
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
