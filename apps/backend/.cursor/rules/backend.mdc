@@ -1,0 +1,697 @@
+---
+alwaysApply: true
+---
+
+# Backend Cursor Rules - Elysia.js + Bun
+
+This file contains backend-specific patterns and conventions. See root `.cursor/rules/monorepo.md` for shared principles.
+
+## Tech Stack
+
+- **Runtime**: Bun
+- **Framework**: Elysia.js
+- **Database ORM**: Drizzle ORM
+- **Authentication**: Better Auth Server
+- **Language**: TypeScript (strict mode)
+
+## Folder Structure
+
+```
+/apps/backend/src/
+  /routes          # API routes organized by domain
+  /repositories    # Data access layer (Drizzle queries)
+  /services        # Business logic layer
+  /plugins         # Elysia plugins (auth, services, security)
+  /db              # Database configuration and schema
+    /schema.ts     # Drizzle schema definitions
+    /index.ts      # Database connection
+  index.ts         # App entry point
+```
+
+## Implementation Order
+
+When creating new features, follow this order:
+
+1. **Schema Definition** (`/db/schema.ts`)
+   - Define Drizzle schema with proper types
+   - Export inferred types: `export type Entity = typeof entity.$inferSelect`
+   - Use proper constraints (unique, not null, default)
+
+2. **Repository** (`/repositories/`)
+   - Data access layer using Drizzle queries
+   - Use Drizzle's query builder for type-safe queries
+   - Implement CRUD operations
+
+3. **Service** (`/services/`)
+   - Business logic layer
+   - Accept repositories via constructor (dependency injection)
+   - Handle transactions for multi-step operations
+   - Throw errors for business rule violations
+
+4. **Route** (`/routes/`)
+   - Use Elysia routes with proper prefixes
+   - Use auth macro for protected routes
+   - Keep routes thin - delegate to services
+   - Use Elysia Type System (`t`) for validation
+
+5. **Plugin Registration** (`/plugins/services.plugin.ts`)
+   - Register services in servicesPlugin for dependency injection
+
+## Database Patterns (Drizzle ORM)
+
+### Schema Definition
+
+```typescript
+// /apps/backend/src/db/schema.ts
+import { pgTable, text, boolean, timestamp, serial } from 'drizzle-orm/pg-core';
+
+export const todos = pgTable('todos', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  completed: boolean('completed').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Always export inferred types
+export type Todo = typeof todos.$inferSelect;
+export type NewTodo = typeof todos.$inferInsert;
+```
+
+**Key Points**:
+
+- Organize schemas by domain/entity
+- Use proper constraints (unique, not null, default)
+- Define relations explicitly for type inference
+- Export `$inferSelect` and `$inferInsert` types
+
+### Repository Pattern
+
+```typescript
+// /apps/backend/src/repositories/todo.repository.ts
+import { db } from '../db';
+import { todos, type Todo, type NewTodo } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+export class TodoRepository {
+  async findAll(): Promise<Todo[]> {
+    return db.select().from(todos);
+  }
+
+  async findById(id: number): Promise<Todo | undefined> {
+    const result = await db.select().from(todos).where(eq(todos.id, id));
+    return result[0];
+  }
+
+  async create(data: NewTodo): Promise<Todo> {
+    const [todo] = await db.insert(todos).values(data).returning();
+    return todo;
+  }
+
+  async update(id: number, data: Partial<NewTodo>): Promise<Todo | undefined> {
+    const [todo] = await db
+      .update(todos)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(todos.id, id))
+      .returning();
+    return todo;
+  }
+
+  async delete(id: number): Promise<boolean> {
+    const result = await db.delete(todos).where(eq(todos.id, id)).returning();
+    return result.length > 0;
+  }
+}
+```
+
+**Key Points**:
+
+- Use Drizzle's query builder for type-safe queries
+- Return `undefined` for not found cases
+- Use `.returning()` for insert/update operations
+- Always use parameterized queries (Drizzle handles this)
+
+### Service Pattern
+
+```typescript
+// /apps/backend/src/services/todo.service.ts
+import { TodoRepository } from '../repositories/todo.repository';
+import type { NewTodo, Todo } from '../db/schema';
+
+/**
+ * TodoService - Business logic layer for todos
+ * Handles business rules and validation for todo operations
+ */
+export class TodoService {
+  private readonly todoRepo: TodoRepository;
+
+  constructor(todoRepo: TodoRepository) {
+    this.todoRepo = todoRepo;
+  }
+
+  /**
+   * Get all todos
+   */
+  async getAllTodos(): Promise<Todo[]> {
+    return await this.todoRepo.findAll();
+  }
+
+  /**
+   * Get a single todo by ID
+   * @throws Error if todo not found
+   */
+  async getTodoById(id: number): Promise<Todo> {
+    const todo = await this.todoRepo.findById(id);
+    if (!todo) {
+      throw new Error('Todo not found');
+    }
+    return todo;
+  }
+
+  /**
+   * Create a new todo
+   */
+  async createTodo(data: NewTodo): Promise<Todo> {
+    return await this.todoRepo.create({ ...data, completed: false });
+  }
+}
+```
+
+**Key Points**:
+- Inject repository via constructor
+- Declare dependencies as `private readonly` fields
+- Use explicit constructor parameter assignment (matches actual implementation)
+- Add JSDoc comments for public methods
+- Implement business logic and validation
+- Throw errors for business rule violations with descriptive messages
+- Keep services focused on business logic
+
+### Transaction Handling
+
+```typescript
+import { db } from '../db';
+
+export class OrderService {
+  async createOrder(userId: string, items: OrderItem[]) {
+    return await db.transaction(async (tx) => {
+      // Create order
+      const [order] = await tx
+        .insert(orders)
+        .values({ userId, total: calculateTotal(items) })
+        .returning();
+
+      // Create order items
+      await tx
+        .insert(orderItems)
+        .values(items.map((item) => ({ orderId: order.id, ...item })));
+
+      return order;
+    });
+  }
+}
+```
+
+## Elysia Patterns
+
+### Route Definition
+
+```typescript
+// /apps/backend/src/routes/todos.ts
+import { Elysia, t } from 'elysia';
+import { servicesPlugin } from '../plugins/services.plugin';
+
+const NOT_FOUND_STATUS_CODE = 404;
+
+const todoModel = t.Object({
+  id: t.Integer(),
+  title: t.String(),
+  description: t.Union([t.String(), t.Null()]),
+  completed: t.Boolean(),
+  createdAt: t.Date(),
+  updatedAt: t.Date(),
+});
+
+const createTodoModel = t.Object({
+  title: t.String({ minLength: 1 }),
+  description: t.Optional(t.String()),
+});
+
+const errorModel = t.Object({
+  message: t.String(),
+});
+
+export const todosRoute = new Elysia({ prefix: '/todos' })
+  .use(servicesPlugin) // Provides todoService via dependency injection
+  .get(
+    '/',
+    async ({ todoService }) => todoService.getAllTodos(),
+    {
+      response: t.Array(todoModel),
+      detail: {
+        summary: 'Get all todos',
+        description: 'Retrieve a list of all todos',
+        tags: ['todos'],
+      },
+    }
+  )
+  .get(
+    '/:id',
+    async ({ params: { id }, todoService, set }) => {
+      try {
+        return await todoService.getTodoById(Number.parseInt(id, 10));
+      } catch (error) {
+        set.status = NOT_FOUND_STATUS_CODE;
+        return {
+          message: error instanceof Error ? error.message : 'Todo not found',
+        };
+      }
+    },
+    {
+      response: {
+        200: todoModel,
+        404: errorModel,
+      },
+      detail: {
+        summary: 'Get a todo by ID',
+        tags: ['todos'],
+      },
+    }
+  )
+  .post(
+    '/',
+    async ({ body, todoService }) => todoService.createTodo(body),
+    {
+      body: createTodoModel,
+      response: todoModel,
+      detail: {
+        summary: 'Create a todo',
+        tags: ['todos'],
+      },
+    }
+  );
+```
+
+**Key Points**:
+
+- Use constants for magic numbers (e.g., `NOT_FOUND_STATUS_CODE`)
+- Define separate models for requests and responses
+- Use `servicesPlugin` to access services via dependency injection
+- Use Elysia Type System (`t`) for request/response validation
+- Include OpenAPI documentation in `detail` object
+- Implement proper error handling with try-catch
+- Use `set.status` to set HTTP status codes
+- Define response schemas for different status codes (200, 404, etc.)
+- Keep route handlers thin - delegate to services
+- Use prefixes for route organization
+
+### Protected Routes
+
+```typescript
+import { betterAuth } from '../plugins/better-auth.plugin';
+
+export const protectedRoute = new Elysia({ prefix: '/profile' })
+  .use(betterAuth) // Provides auth macro
+  .get(
+    '/',
+    ({ auth }) => {
+      // auth macro provides { user, session }
+      return { user: auth.user };
+    },
+    {
+      auth: true, // Use auth macro
+      detail: {
+        summary: 'Get user profile',
+        tags: ['User'],
+      },
+    }
+  );
+```
+
+**Key Points**:
+
+- Use `betterAuth` plugin for authentication
+- Use `auth: true` in route options to enable auth macro
+- Access user via `auth` parameter in handler
+- Auth macro automatically returns 401 if not authenticated
+
+### Plugin Pattern (Dependency Injection)
+
+```typescript
+// /apps/backend/src/plugins/services.plugin.ts
+import { Elysia } from 'elysia';
+import { TodoRepository } from '../repositories/todo.repository';
+import { TodoService } from '../services/todo.service';
+
+const todoRepo = new TodoRepository();
+const todoService = new TodoService(todoRepo);
+
+export const servicesPlugin = new Elysia({ name: 'services' }).decorate(
+  'todoService',
+  todoService
+);
+```
+
+**Key Points**:
+
+- Initialize repositories and services outside plugin
+- Use `.decorate()` to make services available in routes
+- Services are accessible via dependency injection in route handlers
+- Register plugin in main app: `.use(servicesPlugin)`
+
+### App Setup
+
+```typescript
+// /apps/backend/src/index.ts
+import { Elysia } from 'elysia';
+import { cors } from '@elysiajs/cors';
+import { openapi } from '@elysiajs/openapi';
+import { todosRoute } from './routes/todos';
+import { betterAuth } from './plugins/better-auth.plugin';
+import { securityPlugin } from './plugins/security.plugin';
+import { servicesPlugin } from './plugins/services.plugin';
+
+const app = new Elysia()
+  .use(cors({ credentials: true }))
+  .use(securityPlugin)
+  .use(openapi({ documentation: { ... } }))
+  .use(betterAuth)
+  .use(servicesPlugin)
+  .group('/api', (app) =>
+    app
+      .get('/health', () => ({ status: 'healthy' }))
+      .use(todosRoute)
+  )
+  .listen(3002);
+
+export type App = typeof app; // Required for Eden Treaty
+```
+
+**Key Points**:
+
+- Mount plugins in logical order
+- Use `.group()` for API prefix organization
+- Enable CORS with `credentials: true` for cookie support
+- Always export `App` type for Eden Treaty integration
+- Configure OpenAPI documentation
+
+## Authentication (Better Auth Server)
+
+### Setup
+
+```typescript
+// /apps/backend/src/auth.ts
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { openAPI } from 'better-auth/plugins';
+import { stripe } from '@better-auth/stripe';
+import { db } from './db';
+
+export const auth = betterAuth({
+  trustedOrigins: ['*.vercel.app', 'http://localhost:3000'],
+  database: drizzleAdapter(db, { 
+    provider: 'pg',
+    schema: {
+      user,
+      account,
+      session,
+      verification,
+      subscription: subscriptionTable,
+    },
+  }),
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: false,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+  },
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // 1 day
+  },
+  plugins: [
+    openAPI(), // Provides OpenAPI schema for Better Auth endpoints
+    // Stripe plugin for subscription management (if configured)
+    stripe({
+      stripeClient,
+      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+      createCustomerOnSignUp: true,
+      subscription: {
+        enabled: true,
+        plans: [
+          {
+            name: 'basic',
+            priceId: process.env.STRIPE_BASIC_PRICE_ID || 'price_basic',
+            limits: {
+              projects: 5,
+              storage: 10,
+            },
+          },
+          {
+            name: 'pro',
+            priceId: process.env.STRIPE_PRO_PRICE_ID || 'price_pro',
+            limits: {
+              projects: 20,
+              storage: 50,
+            },
+            freeTrial: {
+              days: 14,
+              onTrialStart: async (subscription) => {
+                // Send trial start email
+              },
+              onTrialEnd: async ({ subscription }, _) => {
+                // Send trial ending email
+              },
+              onTrialExpired: async (subscription) => {
+                // Send trial expired email
+              },
+            },
+          },
+        ],
+        onSubscriptionComplete: async ({ subscription, plan }) => {
+          // Send welcome email
+        },
+        onSubscriptionUpdate: async ({ subscription }) => {
+          // Send update notification
+        },
+        onSubscriptionCancel: async ({ subscription }) => {
+          // Send cancellation confirmation
+        },
+      },
+    }),
+  ],
+});
+```
+
+**Key Points**:
+
+- Use Drizzle adapter with complete schema mapping
+- Configure trusted origins for CORS
+- Set password constraints (min 8, max 128 characters)
+- Configure session expiration (7 days) and update age (1 day)
+- Use OpenAPI plugin for automatic API documentation
+- Optional: Configure Stripe plugin for subscription management
+- Implement lifecycle hooks for email notifications
+
+### Plugin Integration
+
+```typescript
+// /apps/backend/src/plugins/better-auth.plugin.ts
+import { Elysia } from 'elysia';
+import { auth } from '../auth';
+
+export const betterAuth = new Elysia({ name: 'better-auth' })
+  .mount(auth.handler) // Mounts all /api/auth/* routes
+  .macro({
+    auth: {
+      async resolve({ set, request: { headers } }) {
+        const session = await auth.api.getSession({ headers });
+        if (!session) {
+          set.status = 401;
+          throw new Error('Unauthorized');
+        }
+        return { user: session.user, session: session.session };
+      },
+    },
+  });
+```
+
+**Key Points**:
+
+- Better Auth handler is mounted, not manually routed
+- Use macro pattern for protected routes
+- Session validation happens automatically
+- User and session are available via `auth` parameter
+
+## Security Best Practices
+
+### Input Validation
+
+- Always validate inputs using Elysia Type System (`t`)
+- Use proper constraints (minLength, maxLength, etc.)
+- Validate on both request and response
+
+### Database Security
+
+- Use Drizzle's parameterized queries (automatic)
+- Never expose sensitive fields (passwords, tokens)
+- Use transactions for critical operations
+- Implement soft deletes for audit trails when needed
+
+### API Security
+
+- Use security plugin for headers (X-Content-Type-Options, etc.)
+- Rate limit authentication endpoints
+- Validate session on every protected request
+- Use secure, httpOnly cookies for sessions
+
+## Testing
+
+### Unit Tests (Bun test runner)
+
+```typescript
+import { describe, test, expect, mock } from 'bun:test';
+import { TodoService } from '../services/todo.service';
+
+describe('TodoService', () => {
+  test('should get todo by id', async () => {
+    const mockRepo = {
+      findById: mock(async () => ({ id: 1, title: 'Test' })),
+    };
+
+    const service = new TodoService(mockRepo as any);
+    const todo = await service.getTodoById(1);
+
+    expect(todo).toBeDefined();
+  });
+});
+```
+
+### Integration Tests
+
+```typescript
+import { treaty } from '@elysiajs/eden';
+import { app } from '../index';
+
+describe('Todos API', () => {
+  test('should create todo', async () => {
+    const client = treaty(app);
+    const { data, error } = await client.api.todos.post({
+      title: 'Test Todo',
+    });
+
+    expect(error).toBeNull();
+    expect(data?.title).toBe('Test Todo');
+  });
+});
+```
+
+## Logging
+
+### Pino Logger
+
+The backend uses Pino for structured logging:
+
+```typescript
+// /apps/backend/src/utils/logger.ts
+import { logger, createChildLogger } from './utils/logger';
+
+// Use the default logger
+logger.info('Server started');
+logger.error({ err }, 'Failed to connect');
+
+// Create a child logger with context
+const moduleLogger = createChildLogger({ module: 'auth' });
+moduleLogger.info('User authenticated');
+```
+
+**Features**:
+
+- Pretty printing in development (human-readable with colors)
+- JSON output in production (machine-readable)
+- ISO timestamp format
+- Environment-aware log levels
+- Child logger support for contextual logging
+
+**Log Levels**:
+
+- `test` environment: `info` level
+- `development` environment: `debug` level
+- `production` environment: Configurable via `LOG_LEVEL` env var (defaults to `info`)
+
+### Usage in Services
+
+```typescript
+import { createChildLogger } from '../utils/logger';
+
+const logger = createChildLogger({ module: 'user-service' });
+
+export class UserService {
+  async createUser(data: NewUser) {
+    logger.info({ userId: data.email }, 'Creating new user');
+    // ... service logic
+    logger.debug({ userId: user.id }, 'User created successfully');
+    return user;
+  }
+}
+```
+
+## Error Handling
+
+- Throw errors with descriptive messages
+- Use HTTP status codes appropriately (set.status)
+- Return consistent error response format
+- Handle database errors gracefully
+- Log errors with appropriate context
+
+### Error Handling Pattern
+
+```typescript
+// In routes
+.get(
+  '/:id',
+  async ({ params: { id }, todoService, set }) => {
+    try {
+      return await todoService.getTodoById(Number.parseInt(id, 10));
+    } catch (error) {
+      set.status = 404;
+      return {
+        message: error instanceof Error ? error.message : 'Todo not found',
+      };
+    }
+  },
+  {
+    response: {
+      200: todoModel,
+      404: errorModel,
+    },
+  }
+)
+```
+
+**Key Points**:
+
+- Use try-catch blocks in routes for error handling
+- Set appropriate HTTP status codes with `set.status`
+- Define error models for consistent error responses
+- Check if error is instance of Error before accessing message
+- Return error objects matching the defined error schema
+
+## Code Output Format
+
+When providing code solutions:
+
+1. Include file path: `// /apps/backend/src/routes/users.ts`
+2. Show complete imports
+3. Include proper TypeScript types
+4. Add OpenAPI documentation for routes
+5. Follow the layered architecture pattern
+
+## Common Patterns Summary
+
+- **Schema → Repository → Service → Route** implementation order
+- **Dependency Injection** via plugins
+- **Type Safety** with Drizzle inference and Elysia validation
+- **Protected Routes** using auth macro
+- **Error Handling** with descriptive messages
+- **OpenAPI Documentation** in route details

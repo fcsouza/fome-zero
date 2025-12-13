@@ -1,0 +1,1028 @@
+---
+alwaysApply: true
+---
+# Frontend Cursor Rules - Next.js 16 + Better Auth Client
+
+This file contains frontend-specific patterns and conventions. See root `.cursor/rules/monorepo.md` for shared principles.
+
+## Tech Stack
+
+- **Framework**: Next.js 16+ (App Router)
+- **UI**: Tailwind CSS
+- **Toast Notifications**: Sonner (via custom toast utility)
+- **Logging**: Pino (server and client compatible)
+- **Authentication**: Better Auth Client (React)
+- **API Client**: Eden Treaty (Elysia)
+- **Language**: TypeScript (strict mode)
+
+## Folder Structure
+
+```
+/apps/frontend/
+  /app              # Next.js App Router pages
+    /(routes)       # Route segments
+    layout.tsx      # Root layout
+    page.tsx        # Home page
+    /profile        # Profile page (protected)
+    /login          # Login page
+    /signup         # Signup page
+    /subscription   # Subscription management (protected)
+  /components       # React components
+    user-profile.tsx # User profile display component
+  /lib              # Utilities
+    api.ts          # Eden Treaty API client
+    auth-client.ts  # Better Auth Client
+    logger.ts       # Pino logger (server/client compatible)
+    toast.ts        # Toast notification utilities (Sonner)
+  middleware.ts     # Route protection middleware
+  next.config.ts    # Next.js configuration (with API proxy)
+  globals.css       # Global styles
+```
+
+## Component Architecture
+
+### Server Components vs Client Components
+
+**Use Server Components by default** - They run on the server and don't send JavaScript to the client.
+
+**Use Client Components (`'use client'`) only when needed**:
+
+- React hooks (`useState`, `useEffect`, `useSession`, etc.)
+- Browser APIs (window, document, localStorage)
+- Event handlers (onClick, onChange)
+- Third-party libraries that require client-side JavaScript
+
+### Pattern: Server Component for Data Fetching
+
+```typescript
+// /apps/frontend/app/posts/page.tsx
+import { api } from '@/lib/api';
+
+export default async function PostsPage() {
+  const { data: posts, error } = await api.api.posts.get();
+
+  if (error) {
+    return <div>Error loading posts</div>;
+  }
+
+  return (
+    <div className="container py-8">
+      <h1 className="text-3xl font-bold mb-6">Posts</h1>
+      <div className="space-y-4">
+        {posts?.map((post) => (
+          <div key={post.id} className="p-4 border rounded-lg">
+            <h3 className="font-semibold">{post.title}</h3>
+            <p className="text-muted-foreground">{post.content}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Pattern: Client Component for Interactivity
+
+```typescript
+// /apps/frontend/components/create-post-form.tsx
+'use client';
+
+import { useState } from 'react';
+import { api } from '@/lib/api';
+
+export function CreatePostForm() {
+  const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { data, error } = await api.api.posts.post({ title });
+      if (error) {
+        console.error('Failed to create post:', error);
+        return;
+      }
+      setTitle('');
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Post title"
+        required
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Creating...' : 'Create Post'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Eden Treaty API Client
+
+### Setup
+
+```typescript
+// /apps/frontend/lib/api.ts
+import { treaty } from '@elysiajs/eden';
+import type { App } from '@fomezero/backend/src/index';
+
+// Use window.origin for proxying through Next.js
+// This ensures cookies work correctly across different domains
+export const api = treaty<App>(
+  typeof window !== 'undefined' ? window.origin : 'http://localhost:3000',
+  {
+    fetch: {
+      credentials: 'include', // Important for authentication cookies
+    },
+  }
+);
+```
+
+**Key Points**:
+
+- Import backend App type: `import type { App } from '@fomezero/backend/src/index'`
+- Use `window.origin` for proxying (Next.js rewrites handle routing to backend)
+- Always include `credentials: 'include'` for cookie-based authentication
+- Type-safe API calls with full IntelliSense support
+
+### Usage Patterns
+
+#### GET Request
+
+```typescript
+// Client Component
+'use client';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+
+export function PostsList() {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const { data, error } = await api.api.posts.get();
+      if (error) {
+        console.error('Failed to fetch posts:', error);
+        return;
+      }
+      setPosts(data);
+    };
+    fetchPosts();
+  }, []);
+
+  return <div>{/* Render posts */}</div>;
+}
+
+// Server Component
+import { api } from '@/lib/api';
+
+export default async function PostsPage() {
+  const { data: posts, error } = await api.api.posts.get();
+  // ...
+}
+```
+
+#### POST Request
+
+```typescript
+const { data, error } = await api.api.todos.post({
+  title: 'My Todo',
+  description: 'Todo description',
+});
+```
+
+#### PUT/PATCH Request
+
+```typescript
+const { data, error } = await api.api.todos({ id: '1' }).patch({
+  completed: true,
+});
+```
+
+#### DELETE Request
+
+```typescript
+const { data, error } = await api.api.todos({ id: '1' }).delete();
+```
+
+### Error Handling
+
+```typescript
+const { data, error } = await api.api.posts.get();
+
+if (error) {
+  // Handle error
+  console.error('API Error:', error);
+  return;
+}
+
+// Use data safely
+if (data) {
+  // Process data
+}
+```
+
+## Better Auth Client
+
+### CRITICAL: Package Separation
+
+**NEVER import from `better-auth` (server package)**  
+**ALWAYS import from `better-auth/react` (client package)**
+
+### Setup
+
+```typescript
+// /apps/frontend/lib/auth-client.ts
+'use client';
+
+import { createAuthClient } from 'better-auth/react';
+import { nextCookies } from 'better-auth/next-js';
+import { stripeClient } from '@better-auth/stripe/client';
+
+export const authClient = createAuthClient({
+  baseURL:
+    process.env.NODE_ENV === 'production' ||
+    process.env.NODE_ENV === 'development'
+      ? ''
+      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002',
+  fetchOptions: {
+    credentials: 'include', // Important for cookies
+  },
+  plugins: [
+    stripeClient({
+      subscription: true,
+    }),
+    nextCookies(), // Required for Next.js cookie handling
+  ],
+});
+
+// Export hooks and methods
+export const { signIn, signUp, signOut, useSession } = authClient;
+```
+
+**Key Points**:
+
+- Use `nextCookies()` plugin for Next.js compatibility
+- Use `stripeClient()` plugin for subscription management
+- Configure `baseURL` conditionally:
+  - Production/Development: Empty string (uses same origin, proxied through Next.js)
+  - Other environments: Falls back to `NEXT_PUBLIC_API_URL` or `http://localhost:3002`
+- Always include `credentials: 'include'` for cookies
+- Export hooks for use in components
+
+### Using Session Hook
+
+```typescript
+// /apps/frontend/components/user-profile.tsx
+'use client';
+
+import { useSession, signOut } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+
+export function UserProfile() {
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+
+  if (isPending) {
+    return <div>Loading...</div>;
+  }
+
+  if (!session?.user) {
+    return (
+      <div>
+        <Link href="/login">Sign In</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p>{session.user.name}</p>
+      <p>{session.user.email}</p>
+      <button onClick={handleSignOut}>Sign Out</button>
+    </div>
+  );
+}
+```
+
+**Key Points**:
+
+- `useSession()` returns `{ data, isPending }`
+- Check `isPending` for loading state
+- Check `session?.user` for authentication state
+- Session is reactive and updates automatically
+
+### Sign In/Sign Up
+
+```typescript
+// /apps/frontend/components/login-form.tsx
+'use client';
+
+import { useState } from 'react';
+import { signIn } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+
+export function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await signIn.email({
+        email,
+        password,
+      });
+      router.push('/'); // Redirect after successful login
+    } catch (error) {
+      console.error('Login failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        required
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Signing in...' : 'Sign In'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Route Protection
+
+### Middleware Pattern
+
+```typescript
+// /apps/frontend/middleware.ts
+import { getSessionCookie } from 'better-auth/cookies';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const sessionCookie = getSessionCookie(request);
+
+  // Protect profile route - require authentication
+  if (pathname.startsWith('/profile') && !sessionCookie) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Redirect authenticated users away from auth pages
+  if ((pathname === '/login' || pathname === '/signup') && sessionCookie) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/profile/:path*', '/login', '/signup'],
+};
+```
+
+**Key Points**:
+
+- Use `getSessionCookie` from `better-auth/cookies`
+- Protect routes by checking session cookie
+- Redirect to login if not authenticated
+- Redirect authenticated users away from auth pages
+
+### Protected Page Pattern
+
+```typescript
+// /apps/frontend/app/profile/page.tsx
+'use client';
+
+import { useEffect } from 'react';
+import { useSession } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+
+export default function ProfilePage() {
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isPending) return;
+
+    if (!session?.user) {
+      router.push('/login');
+      return;
+    }
+  }, [session, isPending, router]);
+
+  // Use Eden Treaty with session - cookies are automatically included
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const loadProfile = async () => {
+      const { data, error } = await api.api.user.profile.get();
+      if (error) {
+        console.error('Failed to load profile:', error);
+      } else if (data) {
+        // Handle profile data
+      }
+    };
+
+    loadProfile();
+  }, [session]);
+
+  if (isPending) {
+    return <div>Loading...</div>;
+  }
+
+  if (!session?.user) {
+    return null; // Will redirect via useEffect
+  }
+
+  return (
+    <div>
+      <h1>Profile</h1>
+      {/* Profile content */}
+    </div>
+  );
+}
+```
+
+## Combining Eden Treaty with Better Auth
+
+```typescript
+// Eden Treaty automatically includes credentials (cookies)
+// Better Auth session cookies are sent automatically
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSession } from '@/lib/auth-client';
+import { api } from '@/lib/api';
+
+export function ProtectedContent() {
+  const { data: session, isPending } = useSession();
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const fetchUserData = async () => {
+      // Cookies are automatically included - no manual configuration needed
+      const { data, error } = await api.api.user.profile.get();
+
+      if (error) {
+        console.error('Failed to fetch user data:', error);
+        return;
+      }
+
+      setUserData(data);
+    };
+
+    fetchUserData();
+  }, [session]);
+
+  if (isPending) return <div>Loading...</div>;
+  if (!session) return <div>Please sign in</div>;
+
+  return <div>{/* Render user data */}</div>;
+}
+```
+
+**Key Points**:
+
+- Eden Treaty automatically includes credentials (cookies)
+- Better Auth session cookies are sent automatically
+- No manual cookie handling needed
+- Full type safety from backend to frontend
+
+## Toast Notifications (Sonner)
+
+The project uses Sonner for toast notifications with a custom wrapper for consistency:
+
+```typescript
+// /apps/frontend/lib/toast.ts
+import {
+  toastSuccess,
+  toastError,
+  toastInfo,
+  toastLoading,
+  toastDismiss,
+  toastPromise,
+} from '@/lib/toast';
+
+// In your component
+'use client';
+
+export function MyComponent() {
+  const handleSubmit = async () => {
+    const loadingToastId = toastLoading('Submitting...');
+
+    try {
+      const result = await submitForm();
+      toastDismiss(loadingToastId);
+      toastSuccess('Form submitted successfully!');
+    } catch (error) {
+      toastDismiss(loadingToastId);
+      toastError('Submission failed', error.message);
+    }
+  };
+}
+```
+
+### Available Toast Functions
+
+- `toastSuccess(message, description?)` - Green success toast (4s duration)
+- `toastError(message, description?)` - Red error toast (5s duration)
+- `toastInfo(message, description?)` - Blue info toast (4s duration)
+- `toastLoading(message)` - Loading spinner toast (manual dismiss)
+- `toastDismiss(toastId)` - Dismiss a specific toast
+- `toastPromise(promise, options)` - Automatic loading/success/error states
+
+### Toast Pattern with Eden Treaty
+
+```typescript
+'use client';
+
+import { api } from '@/lib/api';
+import { toastError, toastLoading, toastDismiss, toastSuccess } from '@/lib/toast';
+
+export function CreateTodoForm() {
+  const [title, setTitle] = useState('');
+
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      toastError('Please enter a title');
+      return;
+    }
+
+    const loadingToastId = toastLoading('Creating todo...');
+
+    try {
+      const response = await api.api.todos.post({ title });
+      
+      toastDismiss(loadingToastId);
+
+      if (response.data) {
+        toastSuccess('Todo created successfully!');
+        setTitle('');
+      } else if (response.error) {
+        toastError('Failed to create todo');
+      }
+    } catch {
+      toastDismiss(loadingToastId);
+      toastError('An error occurred');
+    }
+  };
+}
+```
+
+## Logging (Pino)
+
+The frontend uses Pino for structured logging in both server and client components:
+
+```typescript
+// /apps/frontend/lib/logger.ts
+import { logger, createChildLogger } from '@/lib/logger';
+
+// In Server Component
+export default async function ServerPage() {
+  logger.info('Server component rendered');
+  // ...
+}
+
+// In Client Component
+'use client';
+
+export function ClientComponent() {
+  const handleError = (error: Error) => {
+    logger.error({ err: error }, 'Failed to submit form');
+  };
+}
+
+// Create child logger with context
+const authLogger = createChildLogger({ module: 'auth' });
+authLogger.info({ userId: user.id }, 'User logged in');
+```
+
+**Features**:
+
+- Works in both Server Components and Client Components
+- Pretty printing in development (human-readable)
+- JSON output in production (machine-readable)
+- ISO timestamp format
+- Environment-aware log levels
+- Child logger support for contextual logging
+- Browser-friendly client-side logging
+
+**Log Levels**:
+
+- `test` environment: `info` level
+- `development` environment: `debug` level
+- `production` environment: Configurable via `LOG_LEVEL` (server) or `NEXT_PUBLIC_LOG_LEVEL` (client)
+
+## Styling with Tailwind CSS
+
+- Use Tailwind utility classes for all styling
+- Use consistent color scheme (zinc palette for dark theme)
+- Organize classes logically (layout → spacing → colors → typography)
+- Use descriptive button states with disabled variants
+
+### Example Pattern
+
+```typescript
+<div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black p-8">
+  <div className="max-w-4xl mx-auto">
+    <div className="bg-zinc-800 rounded-lg p-6 border border-zinc-700">
+      <h1 className="text-3xl font-bold text-white mb-4">Title</h1>
+      {/* Content */}
+    </div>
+  </div>
+</div>
+```
+
+### Button Pattern
+
+```typescript
+<button
+  className="w-full rounded bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-600"
+  disabled={loading}
+  type="submit"
+>
+  {loading ? 'Loading...' : 'Submit'}
+</button>
+```
+
+## Environment Variables
+
+```bash
+# /apps/frontend/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:3002
+NODE_ENV=development
+# Optional: Configure log level for client-side logging
+NEXT_PUBLIC_LOG_LEVEL=debug
+```
+
+- Use `NEXT_PUBLIC_` prefix for client-accessible variables
+- Access via `process.env.NEXT_PUBLIC_*`
+- Use environment-based configuration for baseURL
+
+## Error Handling Patterns
+
+### API Errors with Toast Notifications
+
+The recommended pattern combines Eden Treaty responses with toast notifications:
+
+```typescript
+'use client';
+
+import { api } from '@/lib/api';
+import { toastError, toastSuccess, toastLoading, toastDismiss } from '@/lib/toast';
+
+export function MyComponent() {
+  const handleSubmit = async () => {
+    const loadingToastId = toastLoading('Submitting...');
+
+    try {
+      const { data, error } = await api.api.posts.post({ title: 'My Post' });
+
+      toastDismiss(loadingToastId);
+
+      if (error) {
+        // Handle API error
+        toastError('Failed to create post');
+        return;
+      }
+
+      if (data) {
+        // Handle success
+        toastSuccess('Post created successfully!');
+      }
+    } catch (err) {
+      // Handle unexpected errors
+      toastDismiss(loadingToastId);
+      toastError('An unexpected error occurred');
+      logger.error({ err }, 'Unexpected error during post creation');
+    }
+  };
+}
+```
+
+**Key Points**:
+
+- Always dismiss loading toasts in both success and error paths
+- Check for `error` in response before using `data`
+- Use try-catch for unexpected errors
+- Log unexpected errors with context
+- Provide user-friendly error messages via toasts
+
+### Auth Errors
+
+```typescript
+'use client';
+
+import { signIn } from '@/lib/auth-client';
+import { toastError, toastSuccess, toastLoading, toastDismiss } from '@/lib/toast';
+import { logger } from '@/lib/logger';
+
+export function LoginForm() {
+  const handleSubmit = async (email: string, password: string) => {
+    const loadingToastId = toastLoading('Signing in...');
+
+    try {
+      const result = await signIn.email({ email, password });
+
+      toastDismiss(loadingToastId);
+
+      if (result.error) {
+        toastError('Login failed', result.error.message);
+      } else {
+        toastSuccess('Login successful! Redirecting...');
+        router.push('/');
+      }
+    } catch (err) {
+      toastDismiss(loadingToastId);
+      toastError('An unexpected error occurred');
+      logger.error({ err }, 'Login error');
+    }
+  };
+}
+```
+
+## Code Output Format
+
+When providing code solutions:
+
+1. Include file path: `// /apps/frontend/app/posts/page.tsx`
+2. Specify Server Component vs Client Component
+3. Show complete imports
+4. Include error handling
+5. Use proper TypeScript types
+6. Include Tailwind CSS classes
+
+## Common Patterns Summary
+
+- **Server Components** for data fetching (default)
+- **Client Components** for interactivity (`'use client'`)
+- **Eden Treaty** for type-safe API calls
+- **Better Auth Client** for authentication (React hooks)
+- **Middleware** for route protection
+- **Session Management** via `useSession()` hook
+- **Toast Notifications** via Sonner wrapper for user feedback
+- **Structured Logging** via Pino for debugging (server and client)
+- **Type Safety** end-to-end from backend to frontend
+
+## Complete Example: CRUD with Authentication
+
+Here's a real-world example showing the complete pattern:
+
+```typescript
+// /apps/frontend/app/page.tsx
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { toastError, toastSuccess, toastLoading, toastDismiss } from '@/lib/toast';
+import { logger } from '@/lib/logger';
+
+type Todo = {
+  id: number;
+  title: string;
+  description: string | null;
+  completed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export default function TodosPage() {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch todos on mount
+  const fetchTodos = useCallback(async () => {
+    const response = await api.api.todos.get();
+    if (response.data) {
+      setTodos(response.data as Todo[]);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
+
+  // Create todo with proper error handling
+  const handleCreateTodo = async () => {
+    if (!title.trim()) {
+      toastError('Please enter a title');
+      return;
+    }
+
+    setIsLoading(true);
+    const loadingToastId = toastLoading('Creating todo...');
+
+    try {
+      const response = await api.api.todos.post({
+        title,
+        description: description || undefined,
+      });
+
+      toastDismiss(loadingToastId);
+
+      if (response.data) {
+        toastSuccess('Todo created successfully!');
+        setTitle('');
+        setDescription('');
+        await fetchTodos();
+      } else if (response.error) {
+        toastError('Failed to create todo');
+      }
+    } catch (err) {
+      toastDismiss(loadingToastId);
+      toastError('An error occurred');
+      logger.error({ err }, 'Todo creation error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Toggle todo completion
+  const handleToggleTodo = async (id: number, completed: boolean) => {
+    const loadingToastId = toastLoading('Updating todo...');
+
+    try {
+      const response = await api.api.todos({ id: id.toString() }).patch({
+        completed: !completed,
+      });
+
+      toastDismiss(loadingToastId);
+
+      if (response.data) {
+        toastSuccess(completed ? 'Marked as incomplete' : 'Marked as complete');
+        await fetchTodos();
+      } else if (response.error) {
+        toastError('Failed to update todo');
+      }
+    } catch (err) {
+      toastDismiss(loadingToastId);
+      toastError('An error occurred');
+      logger.error({ err, todoId: id }, 'Todo update error');
+    }
+  };
+
+  // Delete todo
+  const handleDeleteTodo = async (id: number) => {
+    const loadingToastId = toastLoading('Deleting todo...');
+
+    try {
+      const response = await api.api.todos({ id: id.toString() }).delete();
+
+      toastDismiss(loadingToastId);
+
+      if (response.data) {
+        toastSuccess('Todo deleted successfully');
+        await fetchTodos();
+      } else if (response.error) {
+        toastError('Failed to delete todo');
+      }
+    } catch (err) {
+      toastDismiss(loadingToastId);
+      toastError('An error occurred');
+      logger.error({ err, todoId: id }, 'Todo deletion error');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-black p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Create Todo Form */}
+        <div className="bg-zinc-800 rounded-lg p-6 border border-zinc-700 mb-6">
+          <h2 className="text-white text-xl font-semibold mb-4">
+            Create New Todo
+          </h2>
+          <div className="space-y-4">
+            <input
+              className="w-full rounded border border-zinc-700 bg-zinc-900 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreateTodo()}
+              placeholder="Title..."
+              type="text"
+            />
+            <textarea
+              className="w-full rounded border border-zinc-700 bg-zinc-900 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Description (optional)..."
+              rows={3}
+            />
+            <button
+              className="rounded bg-blue-600 px-6 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-zinc-600"
+              onClick={handleCreateTodo}
+              disabled={isLoading || !title.trim()}
+              type="button"
+            >
+              {isLoading ? 'Creating...' : 'Create Todo'}
+            </button>
+          </div>
+        </div>
+
+        {/* Todos List */}
+        <div className="bg-zinc-800 rounded-lg p-6 border border-zinc-700">
+          <h2 className="text-white text-xl font-semibold mb-4">
+            Todos ({todos.length})
+          </h2>
+          <div className="space-y-3">
+            {todos.map((todo) => (
+              <div
+                key={todo.id}
+                className="flex items-start gap-4 rounded border border-zinc-700 bg-zinc-900 p-4"
+              >
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() => handleToggleTodo(todo.id, todo.completed)}
+                  className="mt-1 h-5 w-5 cursor-pointer rounded"
+                />
+                <div className="flex-1">
+                  <h3
+                    className={`text-lg font-medium ${
+                      todo.completed
+                        ? 'text-zinc-500 line-through'
+                        : 'text-white'
+                    }`}
+                  >
+                    {todo.title}
+                  </h3>
+                  {todo.description && (
+                    <p
+                      className={`text-sm mt-1 ${
+                        todo.completed
+                          ? 'text-zinc-600 line-through'
+                          : 'text-zinc-400'
+                      }`}
+                    >
+                      {todo.description}
+                    </p>
+                  )}
+                </div>
+                <button
+                  className="rounded bg-red-600 px-3 py-1 font-medium text-white text-sm transition-colors hover:bg-red-700"
+                  onClick={() => handleDeleteTodo(todo.id)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**This example demonstrates**:
+
+- Client component with state management
+- Eden Treaty for type-safe API calls
+- Proper error handling with toasts
+- Loading states with loading toasts
+- Structured logging for errors
+- Tailwind CSS styling patterns
+- TypeScript type safety
+- User feedback via toast notifications

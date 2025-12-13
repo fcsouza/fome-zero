@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fomezero_test
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fomezero_test
+    ports:
+      - '3002:3002'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "bun run db:generate && bun run db:migrate && bun run start"
+
+  test:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/fomezero_test
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "bun run db:generate && bun run db:migrate && bun test"

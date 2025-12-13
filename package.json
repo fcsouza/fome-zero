@@ -1,0 +1,43 @@
+{
+  "name": "fomezero",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@10.8.2",
+  "description": "Fomezero - Devs de Impacto",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "init": "node scripts/init.mjs",
+    "predev": "./scripts/start-db.sh",
+    "dev": "turbo run dev",
+    "dev:backend": "docker-compose up postgres backend",
+    "db:start": "docker-compose up -d postgres",
+    "db:stop": "docker-compose down",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "format": "npx ultracite@latest fix",
+    "lint:biome": "npx ultracite@latest check",
+    "test": "turbo run test",
+    "pretest:backend": "./scripts/start-db.sh",
+    "test:backend": "cd apps/backend && bun test",
+    "db:generate": "cd apps/backend && bun run db:generate",
+    "db:migrate": "cd apps/backend && bun run db:migrate",
+    "prepare": "node -e \"if (process.env.CI !== 'true' && !process.env.VERCEL) { try { require('child_process').execSync('husky', { stdio: 'inherit' }) } catch(e) {} }\""
+  },
+  "keywords": [
+      "fomezero",
+      "devs de impacto",
+      "devs de impacto brasil",
+      "devs de impacto brasil 2025"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@biomejs/biome": "2.3.4",
+    "turbo": "^2.5.8",
+    "ultracite": "6.3.2"
+  }
+}
