@@ -36,7 +36,7 @@ export default function LoginPage() {
         toastError('Login failed', result.error.message);
       } else {
         toastSuccess('Login successful! Redirecting...');
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (err) {
       toastDismiss(loadingToastId);
