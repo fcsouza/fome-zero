@@ -1,4 +1,5 @@
 import { stripeClient } from '@better-auth/stripe/client';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
 import { nextCookies } from 'better-auth/next-js';
 import { createAuthClient } from 'better-auth/react';
 
@@ -12,6 +13,13 @@ export const authClient = createAuthClient({
     credentials: 'include',
   },
   plugins: [
+    inferAdditionalFields({
+      user: {
+        role: {
+          type: 'string',
+        },
+      },
+    }),
     stripeClient({
       subscription: true,
     }),
@@ -20,3 +28,15 @@ export const authClient = createAuthClient({
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;
+
+// Type helper para o retorno de signIn/signUp
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string | null;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+};

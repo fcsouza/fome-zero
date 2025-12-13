@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient, signUp } from '@/lib/auth-client';
 import { logger } from '@/lib/logger';
@@ -11,7 +12,7 @@ import {
   toastSuccess,
 } from '@/lib/toast';
 
-export default function SignupPage() {
+export default function OngSignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,38 +20,39 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     if (password !== confirmPassword) {
-      toastError('Passwords do not match');
+      toastError('As senhas não coincidem');
       setLoading(false);
       return;
     }
 
-    const loadingToastId = toastLoading('Creating account...');
+    const loadingToastId = toastLoading('Criando conta...');
 
     try {
       const result = await signUp.email({
-        role: 'user',
         email,
         password,
         name,
+        role: 'ong',
       });
 
       toastDismiss(loadingToastId);
 
       if (result.error) {
-        toastError('Signup failed', result.error.message);
+        toastError('Falha no cadastro', result.error.message);
       } else {
-        toastSuccess('Account created successfully! Please check your email.');
+        toastSuccess('Conta criada com sucesso! Verifique seu email.');
         setShowVerificationMessage(true);
       }
     } catch (err) {
       toastDismiss(loadingToastId);
-      toastError('An unexpected error occurred');
+      toastError('Ocorreu um erro inesperado');
       logger.error({ err }, 'Signup error');
     } finally {
       setLoading(false);
@@ -59,29 +61,29 @@ export default function SignupPage() {
 
   const handleResendVerification = async () => {
     if (!email) {
-      toastError('Email is required');
+      toastError('Email é obrigatório');
       return;
     }
 
     setResendLoading(true);
-    const loadingToastId = toastLoading('Sending verification email...');
+    const loadingToastId = toastLoading('Enviando email de verificação...');
 
     try {
       const result = await authClient.sendVerificationEmail({
         email,
-        callbackURL: '/',
+        callbackURL: '/dashboard/ong',
       });
 
       toastDismiss(loadingToastId);
 
       if (result.error) {
-        toastError('Failed to send verification email', result.error.message);
+        toastError('Falha ao enviar email', result.error.message);
       } else {
-        toastSuccess('Verification email sent! Please check your inbox.');
+        toastSuccess('Email de verificação enviado! Verifique sua caixa de entrada.');
       }
     } catch (err) {
       toastDismiss(loadingToastId);
-      toastError('An unexpected error occurred');
+      toastError('Ocorreu um erro inesperado');
       logger.error({ err }, 'Resend verification error');
     } finally {
       setResendLoading(false);
@@ -96,8 +98,7 @@ export default function SignupPage() {
             <div className="text-center">
               <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/20">
                 <svg
-                  aria-label="Email verification icon"
-                  aria-labelledby="Email verification icon"
+                  aria-label="Ícone de verificação de email"
                   className="h-8 w-8 text-blue-400"
                   fill="none"
                   role="img"
@@ -113,15 +114,15 @@ export default function SignupPage() {
                 </svg>
               </div>
               <h1 className="mb-4 text-center font-bold text-3xl text-white">
-                Check Your Email
+                Verifique seu Email
               </h1>
               <p className="mb-2 text-zinc-300">
-                We&apos;ve sent a verification link to
+                Enviamos um link de verificação para
               </p>
               <p className="mb-6 font-medium text-blue-400">{email}</p>
               <p className="mb-6 text-sm text-zinc-400">
-                Please click the link in the email to verify your account. The
-                link will expire in 1 hour.
+                Clique no link do email para verificar sua conta. O link expira
+                em 1 hora.
               </p>
               <div className="space-y-3">
                 <button
@@ -130,7 +131,9 @@ export default function SignupPage() {
                   onClick={handleResendVerification}
                   type="button"
                 >
-                  {resendLoading ? 'Sending...' : 'Resend Verification Email'}
+                  {resendLoading
+                    ? 'Enviando...'
+                    : 'Reenviar Email de Verificação'}
                 </button>
                 <button
                   className="w-full rounded border border-zinc-700 bg-transparent px-6 py-3 font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
@@ -143,17 +146,17 @@ export default function SignupPage() {
                   }}
                   type="button"
                 >
-                  Back to Sign Up
+                  Voltar ao Cadastro
                 </button>
               </div>
               <div className="mt-6 text-center">
                 <p className="text-sm text-zinc-400">
-                  Already verified?{' '}
+                  Já verificou?{' '}
                   <Link
                     className="text-blue-400 hover:text-blue-300"
-                    href="/login"
+                    href="/login/ong"
                   >
-                    Sign in
+                    Entrar
                   </Link>
                 </p>
               </div>
@@ -168,9 +171,12 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-900 to-black p-8">
       <div className="w-full max-w-md">
         <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-8">
-          <h1 className="mb-6 text-center font-bold text-3xl text-white">
-            Create Account
+          <h1 className="mb-2 text-center font-bold text-3xl text-white">
+            Cadastro de ONG
           </h1>
+          <p className="mb-6 text-center text-sm text-zinc-400">
+            Crie sua conta para gerenciar sua ONG
+          </p>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
@@ -178,13 +184,13 @@ export default function SignupPage() {
                 className="mb-2 block font-medium text-sm text-zinc-300"
                 htmlFor="name"
               >
-                Name
+                Nome da ONG
               </label>
               <input
                 className="w-full rounded border border-zinc-700 bg-zinc-900 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
                 disabled={loading}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder="Nome da sua ONG"
                 required
                 type="text"
                 value={name}
@@ -202,7 +208,7 @@ export default function SignupPage() {
                 className="w-full rounded border border-zinc-700 bg-zinc-900 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
                 disabled={loading}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="contato@ong.org"
                 required
                 type="email"
                 value={email}
@@ -214,7 +220,7 @@ export default function SignupPage() {
                 className="mb-2 block font-medium text-sm text-zinc-300"
                 htmlFor="password"
               >
-                Password
+                Senha
               </label>
               <input
                 className="w-full rounded border border-zinc-700 bg-zinc-900 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
@@ -227,7 +233,7 @@ export default function SignupPage() {
                 value={password}
               />
               <p className="mt-1 text-xs text-zinc-500">
-                At least 8 characters
+                Mínimo de 8 caracteres
               </p>
             </div>
 
@@ -236,7 +242,7 @@ export default function SignupPage() {
                 className="mb-2 block font-medium text-sm text-zinc-300"
                 htmlFor="confirmPassword"
               >
-                Confirm Password
+                Confirmar Senha
               </label>
               <input
                 className="w-full rounded border border-zinc-700 bg-zinc-900 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
@@ -255,15 +261,18 @@ export default function SignupPage() {
               disabled={loading}
               type="submit"
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {loading ? 'Criando conta...' : 'Cadastrar'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-zinc-400">
-              Already have an account?{' '}
-              <Link className="text-blue-400 hover:text-blue-300" href="/login">
-                Sign in
+              Já tem uma conta?{' '}
+              <Link
+                className="text-blue-400 hover:text-blue-300"
+                href="/login/ong"
+              >
+                Entrar
               </Link>
             </p>
           </div>
@@ -272,3 +281,4 @@ export default function SignupPage() {
     </div>
   );
 }
+
