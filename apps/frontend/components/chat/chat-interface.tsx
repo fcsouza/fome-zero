@@ -299,3 +299,4 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     </div>
   );
 }
+
