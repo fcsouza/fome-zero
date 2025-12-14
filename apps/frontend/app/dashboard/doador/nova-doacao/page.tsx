@@ -22,7 +22,7 @@ export default function NovaDoacaoPage() {
   const router = useRouter();
   const { createDonation, submitChecklist, generateCertificate, isLoading } =
     useDonation();
-  const { result: analysisResult, reset: resetAnalysis } = useFoodAnalysis();
+  const { reset: resetAnalysis } = useFoodAnalysis();
 
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState<{
@@ -123,7 +123,9 @@ export default function NovaDoacaoPage() {
   };
 
   const handleChecklistSubmit = async (responses: Record<string, unknown>) => {
-    if (!donationId) return;
+    if (!donationId) {
+      return;
+    }
 
     try {
       await submitChecklist(donationId, checklistType, responses);
@@ -137,7 +139,9 @@ export default function NovaDoacaoPage() {
   };
 
   const handleGenerateCertificate = async () => {
-    if (!donationId) return;
+    if (!donationId) {
+      return;
+    }
 
     try {
       await generateCertificate(donationId);
@@ -153,7 +157,9 @@ export default function NovaDoacaoPage() {
   };
 
   const handleDownloadCertificate = async () => {
-    if (!donationId) return;
+    if (!donationId) {
+      return;
+    }
 
     try {
       await donationsApi.downloadCertificate(donationId);

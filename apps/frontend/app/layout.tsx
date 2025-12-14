@@ -3,8 +3,9 @@ import { Toaster } from 'sonner';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'fomezero',
-  description: 'fomezero - Frontend Application',
+  title: 'Doe Seguro - Doação de Alimentos com Segurança Jurídica',
+  description:
+    'Transforme a incerteza em impacto social. O Doe Seguro utiliza Inteligência Artificial para garantir validação jurídica e sanitária em cada doação, em conformidade com a Lei 14.016/2020.',
 };
 
 export default function RootLayout({
