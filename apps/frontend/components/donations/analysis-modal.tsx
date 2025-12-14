@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUpload } from './image-upload';
-import { Loading } from '@/components/ui/loading';
 import type { FoodAnalysisResult } from '@/lib/api/donations';
 
 interface AnalysisModalProps {
@@ -120,43 +119,57 @@ export function AnalysisModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Análise de Alimento por IA</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg font-semibold">
+            Análise de Alimento por IA
+          </DialogTitle>
+          <DialogDescription className="text-sm">
             Tire uma foto do alimento e adicione informações adicionais para
-            análise
+            análise. A IA avaliará se o alimento está próprio para doação
+            conforme a Lei 14.016/2020.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="image">Foto do Alimento</Label>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="image" className="text-sm font-medium">
+              Foto do Alimento *
+            </Label>
             <ImageUpload
               onImageSelect={handleImageSelect}
               imagePreview={imagePreview}
               className="mt-2"
             />
+            <p className="text-muted-foreground text-xs">
+              Tire uma foto clara do alimento para análise
+            </p>
           </div>
 
-          <div>
-            <Label htmlFor="text">Informações Adicionais (opcional)</Label>
+          <div className="space-y-2">
+            <Label htmlFor="text" className="text-sm font-medium">
+              Informações Adicionais (opcional)
+            </Label>
             <Textarea
               id="text"
               placeholder="Ex: Marmitas preparadas há 1 hora, mantidas em temperatura adequada..."
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               className="mt-2"
-              rows={3}
+              rows={4}
             />
+            <p className="text-muted-foreground text-xs">
+              Adicione informações relevantes sobre condições de armazenamento,
+              preparo ou validade
+            </p>
           </div>
 
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <p className="text-destructive text-sm font-medium">{error}</p>
             </div>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -167,11 +180,11 @@ export function AnalysisModal({
           <Button onClick={handleAnalyze} disabled={isAnalyzing || !imageFile}>
             {isAnalyzing ? (
               <>
-                <Loading className="mr-2" />
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
                 Analisando...
               </>
             ) : (
-              'Analisar'
+              'Analisar Alimento'
             )}
           </Button>
         </DialogFooter>

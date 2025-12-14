@@ -168,15 +168,28 @@ export function ChecklistForm({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Checklist de Conformidade</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold text-gray-900">
+          Checklist de Conformidade
+        </CardTitle>
+        <p className="text-gray-600 text-sm">
+          Preencha os campos abaixo para garantir a conformidade com a Lei
+          14.016/2020 e RDC 216/2004 da ANVISA
+        </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {renderChecklistFields()}
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? 'Salvando...' : 'Salvar Checklist'}
-          </Button>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">{renderChecklistFields()}</div>
+          <div className="border-t border-gray-200 pt-4">
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="w-full bg-green-500 text-white hover:bg-green-600" 
+              size="lg"
+            >
+              {isLoading ? 'Salvando...' : 'Salvar Checklist'}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

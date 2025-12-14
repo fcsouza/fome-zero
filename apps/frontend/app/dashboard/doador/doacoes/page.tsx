@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
-import { UserProfile } from '@/components/user-profile';
 import { DonationCard } from '@/components/donations/donation-card';
 import { Button } from '@/components/ui/button';
+import { Loading } from '@/components/ui/loading';
 import { useDonation } from '@/lib/hooks/use-donation';
 import { donationsApi } from '@/lib/api/donations';
 import { toast } from 'sonner';
@@ -13,24 +12,10 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DoadorDoacoesPage() {
-  const { data: session, isPending } = useSession();
-  const router = useRouter();
+  const { data: session } = useSession();
   const { getDonations, isLoading } = useDonation();
   const [donations, setDonations] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>('all');
-
-  useEffect(() => {
-    if (!isPending) {
-      if (!session) {
-        router.push('/login/doador');
-        return;
-      }
-      if (session.user?.role !== 'doador') {
-        router.push('/login/doador');
-        return;
-      }
-    }
-  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session?.user?.role === 'doador') {
@@ -62,93 +47,112 @@ export default function DoadorDoacoesPage() {
     }
   };
 
-  if (isPending) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Carregando...</p>
-      </div>
-    );
-  }
-
-  if (!session || session.user?.role !== 'doador') {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background p-8">
-      <main className="mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="font-bold text-4xl">Minhas Doações</h1>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/doador/nova-doacao">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Doação
-              </Button>
-            </Link>
-            <UserProfile />
-          </div>
+    <div className="p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">Minhas Doações</h1>
+          <p className="text-gray-600">
+            Gerencie e acompanhe todas as suas doações
+          </p>
         </div>
+        <Link href="/dashboard/doador/nova-doacao">
+          <Button className="bg-green-500 text-white hover:bg-green-600">
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Doação
+          </Button>
+        </Link>
+      </div>
 
-        <div className="mb-6 flex gap-2">
+      <div className="space-y-6">
+
+      <div className="flex flex-wrap gap-2">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             onClick={() => setFilter('all')}
+            className={
+              filter === 'all'
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }
           >
             Todas
           </Button>
           <Button
             variant={filter === 'pending' ? 'default' : 'outline'}
             onClick={() => setFilter('pending')}
+            className={
+              filter === 'pending'
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }
           >
             Pendentes
           </Button>
           <Button
             variant={filter === 'available' ? 'default' : 'outline'}
             onClick={() => setFilter('available')}
+            className={
+              filter === 'available'
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }
           >
             Disponíveis
           </Button>
           <Button
             variant={filter === 'accepted' ? 'default' : 'outline'}
             onClick={() => setFilter('accepted')}
+            className={
+              filter === 'accepted'
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }
           >
             Aceitas
           </Button>
           <Button
             variant={filter === 'collected' ? 'default' : 'outline'}
             onClick={() => setFilter('collected')}
+            className={
+              filter === 'collected'
+                ? 'bg-green-500 text-white hover:bg-green-600'
+                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }
           >
             Coletadas
           </Button>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <p>Carregando...</p>
-          </div>
-        ) : donations.length === 0 ? (
-          <div className="rounded-lg border p-12 text-center">
-            <p className="text-muted-foreground">
-              Nenhuma doação encontrada.
-            </p>
-            <Link href="/dashboard/doador/nova-doacao">
-              <Button className="mt-4">Criar Primeira Doação</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {donations.map((donation) => (
-              <DonationCard
-                key={donation.id}
-                donation={donation}
-                userRole="doador"
-                onDownloadCertificate={handleDownloadCertificate}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loading message="Carregando doações..." />
+        </div>
+      ) : donations.length === 0 ? (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+          <p className="text-gray-600 mb-4">
+            Nenhuma doação encontrada.
+          </p>
+          <Link href="/dashboard/doador/nova-doacao">
+            <Button className="bg-green-500 text-white hover:bg-green-600">
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Primeira Doação
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {donations.map((donation) => (
+            <DonationCard
+              key={donation.id}
+              donation={donation}
+              userRole="doador"
+              onDownloadCertificate={handleDownloadCertificate}
+            />
+          ))}
+        </div>
+      )}
+      </div>
     </div>
   );
 }

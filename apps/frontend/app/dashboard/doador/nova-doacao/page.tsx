@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from '@/lib/auth-client';
-import { UserProfile } from '@/components/user-profile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +16,6 @@ import { donationsApi, type FoodAnalysisResult } from '@/lib/api/donations';
 import { toast } from 'sonner';
 
 export default function NovaDoacaoPage() {
-  const { data: session, isPending } = useSession();
   const router = useRouter();
   const { createDonation, submitChecklist, generateCertificate, isLoading } =
     useDonation();
@@ -44,31 +41,6 @@ export default function NovaDoacaoPage() {
   >('form');
   const [donationId, setDonationId] = useState<string | null>(null);
   const [checklistType, setChecklistType] = useState<string>('generic');
-
-  useEffect(() => {
-    if (!isPending) {
-      if (!session) {
-        router.push('/login/doador');
-        return;
-      }
-      if (session.user?.role !== 'doador') {
-        router.push('/login/doador');
-        return;
-      }
-    }
-  }, [session, isPending, router]);
-
-  if (isPending) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Carregando...</p>
-      </div>
-    );
-  }
-
-  if (!session || session.user?.role !== 'doador') {
-    return null;
-  }
 
   const handleAnalysisComplete = (data: {
     imageData: string;
@@ -174,18 +146,18 @@ export default function NovaDoacaoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <main className="mx-auto max-w-4xl">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="font-bold text-4xl">Nova Doação</h1>
-          <UserProfile />
-        </div>
-
-        <div className="space-y-6">
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="mb-2 font-bold text-3xl text-gray-900">Nova Doação</h1>
+        <p className="text-gray-600">
+          Crie uma nova doação com análise de IA e certificação legal
+        </p>
+      </div>
+      <div className="space-y-6">
           {currentStep === 'form' && (
             <Card>
               <CardHeader>
-                <CardTitle>Informações da Doação</CardTitle>
+                <CardTitle className="text-gray-900">Informações da Doação</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -262,7 +234,7 @@ export default function NovaDoacaoPage() {
 
                 <Button
                   onClick={() => setIsAnalysisModalOpen(true)}
-                  className="w-full"
+                  className="w-full bg-green-500 text-white hover:bg-green-600"
                 >
                   Analisar Alimento com IA
                 </Button>
@@ -281,10 +253,15 @@ export default function NovaDoacaoPage() {
                     setCurrentStep('form');
                     resetAnalysis();
                   }}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Voltar
                 </Button>
-                <Button onClick={handleCreateDonation} disabled={isLoading}>
+                <Button 
+                  onClick={handleCreateDonation} 
+                  disabled={isLoading}
+                  className="bg-green-500 text-white hover:bg-green-600"
+                >
                   {isLoading ? 'Criando...' : 'Criar Doação'}
                 </Button>
               </div>
@@ -304,10 +281,10 @@ export default function NovaDoacaoPage() {
           {currentStep === 'certificate' && donationId && (
             <Card>
               <CardHeader>
-                <CardTitle>Gerar Certificado</CardTitle>
+                <CardTitle className="text-gray-900">Gerar Certificado</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Gere o certificado de conformidade para sua doação. Este
                   certificado protege você juridicamente conforme a Lei
                   14.016/2020.
@@ -315,7 +292,7 @@ export default function NovaDoacaoPage() {
                 <Button
                   onClick={handleGenerateCertificate}
                   disabled={isLoading}
-                  className="w-full"
+                  className="w-full bg-green-500 text-white hover:bg-green-600"
                 >
                   {isLoading ? 'Gerando...' : 'Gerar Certificado'}
                 </Button>
@@ -326,24 +303,24 @@ export default function NovaDoacaoPage() {
           {currentStep === 'complete' && (
             <Card>
               <CardHeader>
-                <CardTitle>Doação Criada com Sucesso!</CardTitle>
+                <CardTitle className="text-gray-900">Doação Criada com Sucesso!</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
+                <p className="text-gray-600">
                   Sua doação foi criada e está disponível para ONGs. O
                   certificado foi gerado e está disponível para download.
                 </p>
                 <div className="flex gap-2">
                   <Button
                     onClick={handleDownloadCertificate}
-                    className="flex-1"
+                    className="flex-1 bg-green-500 text-white hover:bg-green-600"
                   >
                     Baixar Certificado
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => router.push('/dashboard/doador/doacoes')}
-                    className="flex-1"
+                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     Ver Minhas Doações
                   </Button>
@@ -351,14 +328,13 @@ export default function NovaDoacaoPage() {
               </CardContent>
             </Card>
           )}
-        </div>
 
-        <AnalysisModal
-          open={isAnalysisModalOpen}
-          onOpenChange={setIsAnalysisModalOpen}
-          onAnalysisComplete={handleAnalysisComplete}
-        />
-      </main>
+      <AnalysisModal
+        open={isAnalysisModalOpen}
+        onOpenChange={setIsAnalysisModalOpen}
+        onAnalysisComplete={handleAnalysisComplete}
+      />
+      </div>
     </div>
   );
 }
