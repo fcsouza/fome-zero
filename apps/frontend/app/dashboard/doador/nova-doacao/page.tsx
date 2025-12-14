@@ -146,20 +146,20 @@ export default function NovaDoacaoPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="mb-2 font-bold text-3xl text-gray-900">Nova Doação</h1>
-        <p className="text-gray-600">
+    <div className="p-4 md:p-8">
+      <div className="mb-6 md:mb-8">
+        <h1 className="mb-2 font-bold text-2xl md:text-3xl text-gray-900">Nova Doação</h1>
+        <p className="text-sm md:text-base text-gray-600">
           Crie uma nova doação com análise de IA e certificação legal
         </p>
       </div>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
           {currentStep === 'form' && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-gray-900">Informações da Doação</CardTitle>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-lg md:text-xl text-gray-900">Informações da Doação</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 md:p-6">
                 <div>
                   <Label htmlFor="tipoAlimento">Tipo de Alimento *</Label>
                   <Input
@@ -188,7 +188,7 @@ export default function NovaDoacaoPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="quantidade">Quantidade</Label>
                     <Input
@@ -246,21 +246,21 @@ export default function NovaDoacaoPage() {
             <div className="space-y-4">
               <AIAnalysisResult result={analysisData.aiResponse} />
 
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setCurrentStep('form');
                     resetAnalysis();
                   }}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Voltar
                 </Button>
                 <Button 
                   onClick={handleCreateDonation} 
                   disabled={isLoading}
-                  className="bg-green-500 text-white hover:bg-green-600"
+                  className="w-full sm:w-auto bg-green-500 text-white hover:bg-green-600"
                 >
                   {isLoading ? 'Criando...' : 'Criar Doação'}
                 </Button>
@@ -280,11 +280,11 @@ export default function NovaDoacaoPage() {
 
           {currentStep === 'certificate' && donationId && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-gray-900">Gerar Certificado</CardTitle>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-lg md:text-xl text-gray-900">Gerar Certificado</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">
+              <CardContent className="space-y-4 p-4 md:p-6">
+                <p className="text-sm md:text-base text-gray-600">
                   Gere o certificado de conformidade para sua doação. Este
                   certificado protege você juridicamente conforme a Lei
                   14.016/2020.
@@ -302,15 +302,15 @@ export default function NovaDoacaoPage() {
 
           {currentStep === 'complete' && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-gray-900">Doação Criada com Sucesso!</CardTitle>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-lg md:text-xl text-gray-900">Doação Criada com Sucesso!</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600">
+              <CardContent className="space-y-4 p-4 md:p-6">
+                <p className="text-sm md:text-base text-gray-600">
                   Sua doação foi criada e está disponível para ONGs. O
                   certificado foi gerado e está disponível para download.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     onClick={handleDownloadCertificate}
                     className="flex-1 bg-green-500 text-white hover:bg-green-600"
