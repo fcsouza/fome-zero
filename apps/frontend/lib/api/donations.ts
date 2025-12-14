@@ -1,4 +1,5 @@
-import { api } from '../api';
+// Regex to extract filename from Content-Disposition header
+const FILENAME_REGEX = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
 
 export interface FoodAnalysisResult {
   proprio_para_doacao: boolean;
@@ -160,15 +161,26 @@ export const donationsApi = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ message: 'Failed to download certificate' }));
       throw new Error(error.message || 'Failed to download certificate');
+    }
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = `certificado-${donationId}.pdf`;
+    
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(FILENAME_REGEX);
+      if (filenameMatch?.[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
     }
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `certificado-${donationId}.pdf`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);

@@ -390,11 +390,13 @@ export const donationsRoute = new Elysia({ prefix: '/donations' })
         try {
           const pdfBuffer = await readFile(pdfPath);
           set.headers['Content-Type'] = 'application/pdf';
-          set.headers['Content-Disposition'] = `attachment; filename="certificado-${certificate.certificateNumber}.pdf"`;
+          const filename = `certificado-${certificate.certificateNumber}.pdf`;
+          set.headers['Content-Disposition'] = `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
           return pdfBuffer;
-        } catch {
+        } catch (error) {
           set.status = 500;
-          return { message: 'Failed to read certificate file' };
+          const errorMessage = error instanceof Error ? error.message : 'Failed to read certificate file';
+          return { message: errorMessage };
         }
       } catch (error) {
         set.status = NOT_FOUND_STATUS_CODE;
