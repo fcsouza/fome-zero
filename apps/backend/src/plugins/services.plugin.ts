@@ -11,6 +11,7 @@ import { DonationService } from '../services/donation.service';
 import { ChecklistService } from '../services/checklist.service';
 import { MatchService } from '../services/match.service';
 import { aiService } from '../services/ai.service';
+import { certificateService } from '../services/certificate.service';
 
 const todoRepo = new TodoRepository();
 const userRepo = new UserRepository();
@@ -35,4 +36,5 @@ export const servicesPlugin = new Elysia({ name: 'services' })
   .decorate('donationService', donationService)
   .decorate('checklistService', checklistService)
   .decorate('matchService', matchService)
-  .decorate('aiService', aiService);
+  .decorate('aiService', aiService)
+  .decorate('certificateService', certificateService);

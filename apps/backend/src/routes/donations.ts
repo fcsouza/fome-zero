@@ -1,9 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { betterAuth } from '../plugins/better-auth.plugin';
 import { servicesPlugin } from '../plugins/services.plugin';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { env } from '../config/env';
+import { readFile } from 'node:fs/promises';
 
 const NOT_FOUND_STATUS_CODE = 404;
 const BAD_REQUEST_STATUS_CODE = 400;
@@ -394,7 +392,7 @@ export const donationsRoute = new Elysia({ prefix: '/donations' })
           set.headers['Content-Type'] = 'application/pdf';
           set.headers['Content-Disposition'] = `attachment; filename="certificado-${certificate.certificateNumber}.pdf"`;
           return pdfBuffer;
-        } catch (fileError) {
+        } catch {
           set.status = 500;
           return { message: 'Failed to read certificate file' };
         }

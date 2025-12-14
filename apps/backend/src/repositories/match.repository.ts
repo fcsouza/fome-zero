@@ -1,4 +1,4 @@
-import { eq, and, or, desc } from 'drizzle-orm';
+import { eq, and, or, desc, type SQL } from 'drizzle-orm';
 import { db } from '../db';
 import type { DonationMatch, NewDonationMatch } from '../db/schema';
 import { donationMatches } from '../db/schema';
@@ -15,9 +15,7 @@ export class MatchRepository {
     ongId?: string;
     status?: string;
   }): Promise<DonationMatch[]> {
-    let query = db.select().from(donationMatches);
-
-    const conditions = [];
+    const conditions: SQL[] = [];
 
     if (filters?.donationId) {
       conditions.push(eq(donationMatches.donationId, filters.donationId));
@@ -32,10 +30,17 @@ export class MatchRepository {
     }
 
     if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+      return await db
+        .select()
+        .from(donationMatches)
+        .where(and(...conditions))
+        .orderBy(desc(donationMatches.createdAt));
     }
 
-    return await query.orderBy(desc(donationMatches.createdAt));
+    return await db
+      .select()
+      .from(donationMatches)
+      .orderBy(desc(donationMatches.createdAt));
   }
 
   /**

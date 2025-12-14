@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUpload } from './image-upload';
 import { Loading } from '@/components/ui/loading';
+import type { FoodAnalysisResult } from '@/lib/api/donations';
 
 interface AnalysisModalProps {
   open: boolean;
@@ -22,7 +23,7 @@ interface AnalysisModalProps {
   onAnalysisComplete: (result: {
     imageData: string;
     textInput: string;
-    aiResponse: unknown;
+    aiResponse: FoodAnalysisResult;
   }) => void;
 }
 
@@ -93,7 +94,7 @@ export function AnalysisModal({
         throw new Error(errorData.message || 'Erro ao analisar imagem');
       }
 
-      const aiResponse = await response.json();
+      const aiResponse = (await response.json()) as FoodAnalysisResult;
 
       onAnalysisComplete({
         imageData: imagePreview || '',
