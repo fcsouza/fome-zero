@@ -42,7 +42,7 @@ export function LandingFooter() {
 
           {/* Copyright */}
           <p className="text-sm text-gray-600">
-            © 2024 Doe Seguro. Todos os direitos reservados.
+            © 2025 Doe Seguro. Todos os direitos reservados.
           </p>
         </div>
       </div>

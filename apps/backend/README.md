@@ -49,7 +49,7 @@ curl http://localhost:3002/api/health
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-01-01T00:00:00.000Z",
+  "timestamp": "2025-01-01T00:00:00.000Z",
   "uptime": 3600,
   "environment": "development",
   "version": "1.0.0",
