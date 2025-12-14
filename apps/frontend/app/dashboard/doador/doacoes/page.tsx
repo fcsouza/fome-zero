@@ -48,23 +48,23 @@ export default function DoadorDoacoesPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 md:p-8">
+      <div className="mb-6 md:mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">Minhas Doações</h1>
-          <p className="text-gray-600">
+          <h1 className="mb-2 text-2xl md:text-3xl font-bold text-gray-900">Minhas Doações</h1>
+          <p className="text-sm md:text-base text-gray-600">
             Gerencie e acompanhe todas as suas doações
           </p>
         </div>
-        <Link href="/dashboard/doador/nova-doacao">
-          <Button className="bg-green-500 text-white hover:bg-green-600">
+        <Link href="/dashboard/doador/nova-doacao" className="w-full md:w-auto">
+          <Button className="w-full md:w-auto bg-green-500 text-white hover:bg-green-600">
             <Plus className="mr-2 h-4 w-4" />
             Nova Doação
           </Button>
         </Link>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
 
       <div className="flex flex-wrap gap-2">
           <Button
@@ -129,8 +129,8 @@ export default function DoadorDoacoesPage() {
           <Loading message="Carregando doações..." />
         </div>
       ) : donations.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <p className="text-gray-600 mb-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 md:p-12 text-center">
+          <p className="text-sm md:text-base text-gray-600 mb-4">
             Nenhuma doação encontrada.
           </p>
           <Link href="/dashboard/doador/nova-doacao">
@@ -141,7 +141,7 @@ export default function DoadorDoacoesPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {donations.map((donation) => (
             <DonationCard
               key={donation.id}
