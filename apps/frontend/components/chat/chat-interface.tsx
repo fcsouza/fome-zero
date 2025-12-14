@@ -1,16 +1,84 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
-import { sendMessageStream, type ChatMessage, type ChatEvent } from '@/lib/api/chat';
-import { Send, Loader2 } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  type ChatEvent,
+  type ChatMessage,
+  sendMessageStream,
+} from '@/lib/api/chat';
 
 type ChatInterfaceProps = {
   className?: string;
 };
+
+function MarkdownRenderer({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        h1: ({ children }) => (
+          <h1 className="mt-4 mb-2 font-bold text-xl first:mt-0">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="mt-4 mb-2 font-bold text-lg first:mt-0">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="mt-3 mb-2 font-semibold text-base first:mt-0">
+            {children}
+          </h3>
+        ),
+        ul: ({ children }) => (
+          <ul className="mb-2 list-inside list-disc space-y-1">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="mb-2 list-inside list-decimal space-y-1">
+            {children}
+          </ol>
+        ),
+        li: ({ children }) => <li className="ml-2">{children}</li>,
+        strong: ({ children }) => (
+          <strong className="font-semibold">{children}</strong>
+        ),
+        em: ({ children }) => <em className="italic">{children}</em>,
+        code: ({ children, className }) => {
+          const isInline = !className;
+          return isInline ? (
+            <code className="rounded bg-gray-200 px-1 py-0.5 font-mono text-sm">
+              {children}
+            </code>
+          ) : (
+            <code className="block overflow-x-auto rounded bg-gray-200 p-2 font-mono text-sm">
+              {children}
+            </code>
+          );
+        },
+        blockquote: ({ children }) => (
+          <blockquote className="my-2 border-gray-300 border-l-4 pl-4 italic">
+            {children}
+          </blockquote>
+        ),
+        a: ({ children, href }) => (
+          <a
+            className="text-blue-600 hover:underline"
+            href={href}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {children}
+          </a>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
 
 export function ChatInterface({ className }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -20,15 +88,12 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentAssistantMessageRef = useRef<string>('');
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We want to scroll when messages change
   useEffect(() => {
-    scrollToBottom();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Chat event handling requires multiple conditional branches
   const handleSend = async () => {
     if (!input.trim() || isLoading) {
       return;
@@ -57,39 +122,71 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
 
     setMessages((prev) => [...prev, assistantMessage]);
 
+    const handleThreadEvent = (threadIdValue: string) => {
+      setThreadId(threadIdValue);
+    };
+
+    const handleDeltaEvent = (content: string) => {
+      currentAssistantMessageRef.current += content;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? { ...msg, content: currentAssistantMessageRef.current }
+            : msg
+        )
+      );
+    };
+
+    const handleDoneEvent = (fullResponse?: string) => {
+      setIsLoading(false);
+      if (fullResponse) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: fullResponse }
+              : msg
+          )
+        );
+      }
+    };
+
+    const handleErrorEvent = (error: string) => {
+      setIsLoading(false);
+      toast.error(error);
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== assistantMessageId)
+      );
+    };
+
+    const handleEvent = (event: ChatEvent) => {
+      switch (event.type) {
+        case 'thread':
+          if (event.data.threadId) {
+            handleThreadEvent(event.data.threadId);
+          }
+          break;
+        case 'delta':
+          if (event.data.content) {
+            handleDeltaEvent(event.data.content);
+          }
+          break;
+        case 'done':
+          handleDoneEvent(event.data.fullResponse);
+          break;
+        case 'error':
+          handleErrorEvent(event.data.error || 'Erro ao processar mensagem');
+          break;
+        default:
+          // Unknown event type, ignore
+          break;
+      }
+    };
+
     try {
       const newThreadId = await sendMessageStream(
         userMessage.content,
         threadId || undefined,
-        (event: ChatEvent) => {
-          if (event.type === 'thread' && event.data.threadId) {
-            setThreadId(event.data.threadId);
-          } else if (event.type === 'delta' && event.data.content) {
-            currentAssistantMessageRef.current += event.data.content;
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? { ...msg, content: currentAssistantMessageRef.current }
-                  : msg
-              )
-            );
-          } else if (event.type === 'done') {
-            setIsLoading(false);
-            if (event.data.fullResponse) {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: event.data.fullResponse || '' }
-                    : msg
-                )
-              );
-            }
-          } else if (event.type === 'error') {
-            setIsLoading(false);
-            toast.error(event.data.error || 'Erro ao processar mensagem');
-            setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
-          }
-        }
+        handleEvent
       );
 
       if (newThreadId && !threadId) {
@@ -100,7 +197,9 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
       toast.error(
         error instanceof Error ? error.message : 'Erro ao enviar mensagem'
       );
-      setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== assistantMessageId)
+      );
     }
   };
 
@@ -111,14 +210,35 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
     }
   };
 
+  const renderMessageContent = (message: ChatMessage) => {
+    if (message.role === 'assistant' && message.content) {
+      return (
+        <div className="prose prose-sm max-w-none break-words">
+          <MarkdownRenderer content={message.content} />
+        </div>
+      );
+    }
+    if (message.content) {
+      return (
+        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+      );
+    }
+    return (
+      <span className="flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Digitando...
+      </span>
+    );
+  };
+
   return (
-    <div className={`flex flex-col h-full ${className || ''}`}>
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className={`flex h-full flex-col ${className || ''}`}>
+      <Card className="flex flex-1 flex-col overflow-hidden">
+        <CardContent className="flex-1 space-y-4 overflow-y-auto p-4">
           {messages.length === 0 && (
-            <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="flex h-full items-center justify-center text-gray-500">
               <div className="text-center">
-                <p className="text-lg font-medium mb-2">
+                <p className="mb-2 font-medium text-lg">
                   Olá! Como posso ajudá-lo hoje?
                 </p>
                 <p className="text-sm">
@@ -131,10 +251,10 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
 
           {messages.map((message) => (
             <div
-              key={message.id}
               className={`flex ${
                 message.role === 'user' ? 'justify-end' : 'justify-start'
               }`}
+              key={message.id}
             >
               <div
                 className={`max-w-[80%] rounded-lg px-4 py-2 ${
@@ -143,28 +263,10 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
                     : 'bg-gray-100 text-gray-900'
                 }`}
               >
-                <p className="whitespace-pre-wrap break-words">
-                  {message.content || (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Digitando...
-                    </span>
-                  )}
-                </p>
+                {renderMessageContent(message)}
               </div>
             </div>
           ))}
-
-          {isLoading && messages.length > 0 && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100 text-gray-900">
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Digitando...
-                </span>
-              </div>
-            </div>
-          )}
 
           <div ref={messagesEndRef} />
         </CardContent>
@@ -172,18 +274,18 @@ export function ChatInterface({ className }: ChatInterfaceProps) {
         <div className="border-t p-4">
           <div className="flex gap-2">
             <Textarea
-              value={input}
+              className="resize-none"
+              disabled={isLoading}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite sua mensagem..."
-              disabled={isLoading}
               rows={2}
-              className="resize-none"
+              value={input}
             />
             <Button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
               className="bg-green-500 text-white hover:bg-green-600"
+              disabled={!input.trim() || isLoading}
+              onClick={handleSend}
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
