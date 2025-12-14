@@ -19,9 +19,7 @@ import { createChildLogger } from './utils/logger';
 const logger = createChildLogger({ module: 'auth' });
 
 const stripeClient = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-10-29.clover',
-    })
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
 
 const TRIAL_DAYS = 14;

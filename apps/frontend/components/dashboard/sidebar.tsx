@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
-import { ShieldCheck, LayoutDashboard, Heart, FileCheck, BarChart3, Settings } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Heart, FileCheck, BarChart3, Settings, MessageCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const navItems = [
@@ -16,6 +16,11 @@ const navItems = [
     href: '/dashboard/doador/doacoes',
     label: 'Minhas Doações',
     icon: Heart,
+  },
+  {
+    href: '/dashboard/doador/chatbot',
+    label: 'Chatbot',
+    icon: MessageCircle,
   },
   {
     href: '/dashboard/doador/certificados',
