@@ -154,8 +154,8 @@ export function AIFeatures() {
                   </span>
                 </div>
                 <div className="space-y-2 border-t pt-4 text-sm text-gray-600">
-                  <p>Certificado Nº: DS-2024-00123</p>
-                  <p>Data: 12 OUT 2024 - 10:30</p>
+                  <p>Certificado Nº: DS-2025-00123</p>
+                  <p>Data: 12 OUT 2025 - 10:30</p>
                   <p className="pt-4 text-xs text-gray-500">
                     Assinado Digitalmente
                   </p>

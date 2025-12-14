@@ -1,6 +1,6 @@
-import { createHash } from 'crypto';
-import { mkdir } from 'fs/promises';
-import { join } from 'path';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { env } from '../config/env';
@@ -96,6 +96,15 @@ export class CertificateService {
         certificateNumber
       );
 
+      // Load logo image
+      const logoPath = join(process.cwd(), 'images', 'doe seguro.png');
+      let logoBuffer: Buffer | null = null;
+      try {
+        logoBuffer = await readFile(logoPath);
+      } catch (error) {
+        logger.warn({ err: error, logoPath }, 'Logo image not found, continuing without logo');
+      }
+
       // Create PDF document
       const doc = new PDFDocument({
         size: 'A4',
@@ -106,6 +115,15 @@ export class CertificateService {
       doc.on('data', (chunk: Buffer) => {
         chunks.push(chunk);
       });
+
+      // Logo
+      if (logoBuffer) {
+        doc.image(logoBuffer, {
+          fit: [150, 150],
+          align: 'center',
+        });
+        doc.moveDown();
+      }
 
       // Header
       doc
@@ -133,8 +151,9 @@ export class CertificateService {
         data.doadorCnpj ? `, CNPJ ${data.doadorCnpj}` : ''
       }, declara que os alimentos abaixo descritos foram avaliados e considerados PRÓPRIOS PARA CONSUMO HUMANO no momento da doação, em conformidade com:
 
-• Lei Federal 14.016/2020
+• Lei Federal 15.224/2025
 • RDC ANVISA 216/2004
+• Guia ANVISA 57/2022
 • Boas práticas de manipulação de alimentos`;
 
       doc.text(declarationText, { align: 'justify' }).moveDown(2);
