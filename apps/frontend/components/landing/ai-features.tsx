@@ -3,6 +3,7 @@
 import { Check, ArrowRight, Eye, ClipboardList, FileText, MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function AIFeatures() {
   return (
@@ -46,7 +47,14 @@ export function AIFeatures() {
           </div>
           <div className="relative">
             <div className="rounded-lg bg-gray-100 p-4 sm:p-8">
-              <div className="aspect-[9/16] max-w-[280px] mx-auto rounded-lg bg-gradient-to-br from-green-50 to-green-100" />
+              <div className="aspect-[9/16] max-w-[280px] mx-auto rounded-lg overflow-hidden relative">
+                <Image
+                  src="/foto-ai.png"
+                  alt="Validação Visual de Alimentos com IA"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
         </div>
