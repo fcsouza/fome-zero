@@ -541,7 +541,7 @@ Este projeto está licenciado sob a **ISC License**. Veja o arquivo [LICENSE](LI
 
 ## 🔗 Links Úteis
 
-- [Devs de Impacto 2025](https://devsdeimpacto.com.br)
+- [Devs de Impacto 2025](https://devsdeimpacto.imasters.com.br/)
 - [Lei 14.016/2020](https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14016.htm)
 - [Documentação Elysia.js](https://elysiajs.com/)
 - [Documentação Next.js](https://nextjs.org/docs)
