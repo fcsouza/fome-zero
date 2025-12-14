@@ -68,51 +68,55 @@ export function AIAnalysisResult({ result }: AIAnalysisResultProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
             {getStatusIcon()}
             Análise de IA
           </CardTitle>
           {getStatusBadge()}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium">Tipo de Alimento</p>
-          <p className="text-muted-foreground">{result.tipo_alimento}</p>
+      <CardContent className="space-y-6">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+            Tipo de Alimento
+          </p>
+          <p className="text-base font-medium text-gray-900">{result.tipo_alimento}</p>
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium">Critérios de Avaliação</p>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Conservação adequada</span>
+          <p className="mb-3 text-sm font-semibold text-gray-900">Critérios de Avaliação</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3">
+              <span className="text-sm font-medium text-gray-900">Conservação adequada</span>
               {getCriterioStatus(result.criterios.conservacao_adequada)}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Integridade preservada</span>
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3">
+              <span className="text-sm font-medium text-gray-900">Integridade preservada</span>
               {getCriterioStatus(result.criterios.integridade_preservada)}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Segurança sanitária</span>
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3">
+              <span className="text-sm font-medium text-gray-900">Segurança sanitária</span>
               {getCriterioStatus(result.criterios.seguranca_sanitaria)}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Propriedades nutricionais mantidas</span>
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3">
+              <span className="text-sm font-medium text-gray-900">
+                Propriedades nutricionais mantidas
+              </span>
               {getCriterioStatus(
                 result.criterios.propriedades_nutricionais_mantidas
               )}
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Dentro da validade</span>
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3">
+              <span className="text-sm font-medium text-gray-900">Dentro da validade</span>
+              <span className="text-sm text-gray-600">
                 {result.criterios.dentro_validade}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Embalagem</span>
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3">
+              <span className="text-sm font-medium text-gray-900">Embalagem</span>
+              <span className="text-sm text-gray-600">
                 {result.criterios.embalagem_integra}
               </span>
             </div>
@@ -120,27 +124,27 @@ export function AIAnalysisResult({ result }: AIAnalysisResultProps) {
         </div>
 
         {result.observacoes && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Observações</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <p className="mb-2 text-sm font-semibold text-gray-900">Observações</p>
+            <p className="text-sm leading-relaxed text-gray-600">
               {result.observacoes}
             </p>
           </div>
         )}
 
         {result.recomendacao && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Recomendação</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="mb-2 text-sm font-semibold text-gray-900">Recomendação</p>
+            <p className="text-sm leading-relaxed text-gray-600">
               {result.recomendacao}
             </p>
           </div>
         )}
 
         {result.justificativa && (
-          <div>
-            <p className="mb-1 text-sm font-medium">Justificativa</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <p className="mb-2 text-sm font-semibold text-gray-900">Justificativa</p>
+            <p className="text-sm leading-relaxed text-gray-600">
               {result.justificativa}
             </p>
           </div>
