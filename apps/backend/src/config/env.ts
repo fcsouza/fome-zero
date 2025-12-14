@@ -22,6 +22,9 @@ const envSchema = t.Object({
   STRIPE_PRO_PRICE_ID: t.Optional(t.String()),
   RESEND_API_KEY: t.Optional(t.String()),
   COMMIT_SHA: t.Optional(t.String()),
+  OPENAI_API_KEY: t.Optional(t.String()),
+  OPENAI_ASSISTANT_ID: t.Optional(t.String()),
+  CERTIFICATE_STORAGE_PATH: t.Optional(t.String()),
 });
 
 type EnvInput = typeof envSchema.static;
@@ -40,6 +43,12 @@ export function validateEnv(): EnvInput & { PORT: number } {
     STRIPE_PRO_PRICE_ID: process.env.STRIPE_PRO_PRICE_ID,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     COMMIT_SHA: process.env.COMMIT_SHA,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_ASSISTANT_ID:
+      process.env.OPENAI_ASSISTANT_ID ||
+      'asst_vyRpt1RqBGGCZUN31bQXVCak',
+    CERTIFICATE_STORAGE_PATH:
+      process.env.CERTIFICATE_STORAGE_PATH || './certificates',
   };
 
   if (!env.DATABASE_URL) {
@@ -68,6 +77,11 @@ export function validateEnv(): EnvInput & { PORT: number } {
     if (!env.BETTER_AUTH_URL) {
       logger.warn(
         'BETTER_AUTH_URL is not set. This is required for production.'
+      );
+    }
+    if (!env.OPENAI_API_KEY) {
+      logger.warn(
+        'OPENAI_API_KEY is not set. This is required for AI features.'
       );
     }
   }

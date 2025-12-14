@@ -11,6 +11,7 @@ import { securityPlugin } from './plugins/security.plugin';
 import { servicesPlugin } from './plugins/services.plugin';
 import { todosRoute } from './routes/todos';
 import { userRoute } from './routes/user';
+import { donationsRoute } from './routes/donations';
 import { createChildLogger } from './utils/logger';
 
 const logger = createChildLogger({ module: 'server' });
@@ -46,6 +47,10 @@ const app = new Elysia()
           {
             name: 'User',
             description: 'User profile endpoints (protected)',
+          },
+          {
+            name: 'donations',
+            description: 'Donation management endpoints',
           },
         ],
         components: await OpenAPI.components,
@@ -85,6 +90,7 @@ const app = new Elysia()
       )
       .use(todosRoute)
       .use(userRoute)
+      .use(donationsRoute)
   )
   .listen(env.PORT || DEFAULT_PORT);
 

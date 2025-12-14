@@ -29,8 +29,11 @@
     "drizzle-orm": "^0.36.4",
     "elysia": "^1.4.13",
     "elysia-rate-limit": "^4.4.2",
+    "openai": "^6.10.0",
+    "pdfkit": "^0.17.2",
     "pg": "^8.13.1",
     "pino": "^10.1.0",
+    "qrcode": "^1.5.4",
     "resend": "^6.4.1",
     "stripe": "^19.2.0"
   },

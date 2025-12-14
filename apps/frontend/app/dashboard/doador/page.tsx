@@ -61,12 +61,30 @@ export default function DoadorDashboard() {
               <CardTitle>Funcionalidades do Doador</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>Visualizar doações realizadas</li>
-                <li>Histórico de contribuições</li>
-                <li>ONGs que você apoia</li>
-                <li>Configurações da conta</li>
-              </ul>
+              <div className="space-y-4">
+                <div>
+                  <a
+                    href="/dashboard/doador/nova-doacao"
+                    className="text-primary hover:underline"
+                  >
+                    → Criar Nova Doação
+                  </a>
+                </div>
+                <div>
+                  <a
+                    href="/dashboard/doador/doacoes"
+                    className="text-primary hover:underline"
+                  >
+                    → Ver Minhas Doações
+                  </a>
+                </div>
+                <ul className="list-disc space-y-2 pl-5">
+                  <li>Análise de alimentos por IA</li>
+                  <li>Certificado de conformidade legal</li>
+                  <li>Histórico de contribuições</li>
+                  <li>Rastreamento de doações</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </div>
