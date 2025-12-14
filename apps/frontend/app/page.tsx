@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { LandingHeader } from '@/components/landing/header';
-import { InteractiveHero } from '@/components/landing/interactive-hero';
-import { SecuritySlider } from '@/components/landing/security-slider';
+import { HeroSection } from '@/components/landing/hero-section';
+import { FearVsSecurity } from '@/components/landing/fear-vs-security';
 import { Pillars } from '@/components/landing/pillars';
 import { AIFeatures } from '@/components/landing/ai-features';
 import { Flow } from '@/components/landing/flow';
@@ -33,12 +33,12 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="flex min-h-screen flex-col">
       <LandingHeader />
       <main className="flex-1">
-        <InteractiveHero />
+        <HeroSection />
+        <FearVsSecurity />
         <Pillars />
-        <SecuritySlider />
         <AIFeatures />
         <Flow />
         <CTASection />

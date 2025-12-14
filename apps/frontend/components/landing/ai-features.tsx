@@ -1,197 +1,211 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ArrowRight, ScanLine, Smartphone, MousePointer2, ClipboardList, FileText, MessageCircle } from 'lucide-react';
+import { Check, ArrowRight, Eye, ClipboardList, FileText, MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export function AIFeatures() {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanComplete, setScanComplete] = useState(false);
-
-  const handleScanStart = () => {
-    setIsScanning(true);
-    setScanComplete(false);
-    // Simulate scan duration
-    setTimeout(() => {
-      setScanComplete(true);
-      setIsScanning(false);
-    }, 2000);
-  };
-
-  const handleScanEnd = () => {
-    if (!scanComplete) {
-      setIsScanning(false);
-    }
-  };
-
   return (
-    <section id="funcionalidades" className="bg-white dark:bg-slate-950 py-16 md:py-24 overflow-hidden">
-      <div className="container mx-auto space-y-32 px-4">
-        
-        {/* Feature 1: Interactive Visual Validation */}
-        <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-500">
-              <ScanLine className="h-4 w-4" />
-              <span>IA: Visão Computacional</span>
-            </div>
-            
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white md:text-5xl">
-              Auditoria Visual <br/>
-              <span className="text-emerald-500">em Tempo Real</span>
-            </h2>
-            
-            <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-              Nossa IA analisa micro-texturas e padrões visuais para identificar riscos que o olho humano pode perder. 
-              Segure para escanear ou passe o mouse para ver a análise técnica.
+    <section id="funcionalidades" className="bg-white py-16 md:py-24">
+      <div className="container mx-auto space-y-24 px-4">
+        {/* Feature 1: Visual Validation */}
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-500">
+              IA #1: VISÃO COMPUTACIONAL
             </p>
-
-            <div className="flex flex-col gap-4 pt-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                  <Smartphone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">Mobile</p>
-                  <p className="text-sm text-slate-500">Pressione e segure para escanear</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                  <MousePointer2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">Desktop</p>
-                  <p className="text-sm text-slate-500">Passe o mouse para revelar dados</p>
-                </div>
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
+              Validação Visual de Alimentos em Segundos
+            </h2>
+            <p className="mb-6 text-lg text-gray-600">
+              Nossa visão computacional analisa fotos dos alimentos,
+              identificando frescor, integridade e conformidade visual antes
+              mesmo da doação sair de sua empresa. Evite erros humanos e
+              padronize a qualidade.
+            </p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                <span className="text-gray-600">
+                  Análise de cor e textura para detectar deterioração.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                <span className="text-gray-600">
+                  Detecção automática de embalagens danificadas.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                <span className="text-gray-600">
+                  Classificação automática do tipo de alimento.
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div className="relative">
+            <div className="rounded-lg bg-gray-100 p-4 sm:p-8">
+              <div className="aspect-[9/16] max-w-[280px] mx-auto rounded-lg overflow-hidden relative">
+                <Image
+                  src="/foto-ai.png"
+                  alt="Validação Visual de Alimentos com IA"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="relative group perspective-1000">
-             {/* Interactive Image Container */}
-             <div 
-               className="relative mx-auto max-w-[320px] aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-900 bg-slate-800"
-               onMouseEnter={() => setIsScanning(true)}
-               onMouseLeave={() => { setIsScanning(false); setScanComplete(false); }}
-               onTouchStart={handleScanStart}
-               onTouchEnd={handleScanEnd}
-             >
-               <Image
-                 src="/foto-ai.png"
-                 alt="Validação Visual"
-                 fill
-                 className="object-cover transition-transform duration-700 group-hover:scale-110"
-               />
-
-               {/* Overlay: Scanning UI */}
-               <AnimatePresence>
-                 {(isScanning || scanComplete) && (
-                   <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-emerald-950/40 backdrop-blur-[2px]"
-                   >
-                     {/* Scanning Line */}
-                     {!scanComplete && (
-                       <motion.div 
-                         className="absolute top-0 left-0 w-full h-[2px] bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.8)] z-20"
-                         animate={{ top: ['0%', '100%', '0%'] }}
-                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                       />
-                     )}
-
-                     {/* Bounding Boxes (Revealed on Complete or Hover) */}
-                     <div className="absolute inset-0 p-8">
-                        <motion.div 
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                          className="absolute top-[30%] left-[20%] w-[60%] h-[40%] border-2 border-emerald-400 rounded-lg bg-emerald-400/10 flex items-start justify-between p-2"
-                        >
-                          <div className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded font-mono">
-                            FRESH: 98%
-                          </div>
-                        </motion.div>
-
-                        {scanComplete && (
-                          <motion.div 
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            className="absolute bottom-6 left-6 right-6 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-lg border border-emerald-500/30"
-                          >
-                             <div className="flex items-center gap-3 mb-2">
-                               <div className="bg-emerald-500 rounded-full p-1">
-                                 <Check className="h-4 w-4 text-white" />
-                               </div>
-                               <span className="font-bold text-emerald-600 dark:text-emerald-400">Aprovado</span>
-                             </div>
-                             <p className="text-xs text-slate-500">
-                               Embalagem íntegra. Coloração adequada. Sem sinais de oxidação.
-                             </p>
-                          </motion.div>
-                        )}
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-
-               {/* Hint Overlay (When not interacting) */}
-               {!isScanning && !scanComplete && (
-                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                   <div className="bg-black/50 text-white px-4 py-2 rounded-full backdrop-blur-md text-sm font-medium animate-pulse">
-                     Scan me
-                   </div>
-                 </div>
-               )}
-             </div>
+        {/* Feature 2: Checklist */}
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div className="order-2 lg:order-1">
+            <div className="rounded-lg bg-gray-100 p-8">
+              <Card className="bg-white">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-center justify-between border-b pb-2">
+                    <h3 className="font-semibold text-green-600">
+                      Checklist Sanitário
+                    </h3>
+                    <span className="text-xs text-gray-500">Lei 14.016</span>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span className="text-sm">Temperatura adequada (4°C)?</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span className="text-sm">Embalagem primária íntegra?</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span className="text-sm">Data de validade visível?</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-500">
+              IA #2: CONFORMIDADE
+            </p>
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
+              Checklist Inteligente e Dinâmico
+            </h2>
+            <p className="mb-6 text-lg text-gray-600">
+              Nada é esquecido. Nossa IA gera checklists dinâmicos baseados no
+              tipo de alimento e na legislação vigente. O sistema guia sua
+              equipe passo a passo, garantindo que nenhum requisito sanitário
+              seja ignorado.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2 rounded-full bg-green-50 px-4 py-2">
+                <Check className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-semibold text-green-700">
+                  100% Auditável
+                </span>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-green-50 px-4 py-2">
+                <Check className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-semibold text-green-700">
+                  0 Erros de processo
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Feature 2 & 3 Combined: Logic & Law */}
-        <div className="grid gap-12 md:grid-cols-3">
-           <Card className="bg-slate-50 dark:bg-slate-900 border-none shadow-none">
-             <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
-                   <ClipboardList className="h-6 w-6 text-blue-500" />
+        {/* Feature 3: Certificate */}
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-500">
+              IA #3: JURÍDICO
+            </p>
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
+              Geração Automática de Documentação Legal
+            </h2>
+            <p className="mb-6 text-lg text-gray-600">
+              Transforme dados em proteção. Após a validação, o Doe Seguro
+              emite instantaneamente um "Certificado de Doação Segura", com
+              assinatura digital e carimbo de tempo, servindo como prova de
+              boa-fé e conformidade.
+            </p>
+            <Link
+              href="#"
+              className="inline-flex items-center gap-2 text-green-600 hover:text-green-700"
+            >
+              Ver modelo de certificado
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div>
+            <Card className="bg-white shadow-lg">
+              <CardContent className="p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-green-500">
+                    <Check className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="font-semibold text-gray-900">
+                    Certificado de Doação
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold mb-3 dark:text-white">Checklist Dinâmico</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Esqueça formulários de papel. Nossa IA gera o checklist exato para cada tipo de alimento (lácteos, hortifruti, enlatados) garantindo conformidade total.
-                </p>
-             </CardContent>
-           </Card>
-
-           <Card className="bg-slate-50 dark:bg-slate-900 border-none shadow-none">
-             <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6">
-                   <FileText className="h-6 w-6 text-purple-500" />
+                <div className="space-y-2 border-t pt-4 text-sm text-gray-600">
+                  <p>Certificado Nº: DS-2024-00123</p>
+                  <p>Data: 12 OUT 2024 - 10:30</p>
+                  <p className="pt-4 text-xs text-gray-500">
+                    Assinado Digitalmente
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-3 dark:text-white">Certificado Jurídico</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Geração automática de certificados com hash SHA-256 e assinatura digital. Sua prova irrefutável de boa-fé e conformidade com a Lei 14.016.
-                </p>
-             </CardContent>
-           </Card>
-
-           <Card className="bg-slate-50 dark:bg-slate-900 border-none shadow-none">
-             <CardContent className="pt-6">
-                <div className="h-12 w-12 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-6">
-                   <MessageCircle className="h-6 w-6 text-orange-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-3 dark:text-white">Suporte 24/7</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Dúvidas sobre armazenamento? Nosso assistente IA responde instantaneamente sobre normas da ANVISA e boas práticas de conservação.
-                </p>
-             </CardContent>
-           </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
+        {/* Feature 4: Chatbot */}
+        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div className="order-2 lg:order-1">
+            <Card className="bg-gray-900 text-white">
+              <CardContent className="p-6">
+                <div className="mb-4 flex items-center gap-2 border-b border-gray-700 pb-2">
+                  <MessageCircle className="h-5 w-5 text-green-400" />
+                  <span className="font-semibold">Assistente Doe Seguro</span>
+                </div>
+                <div className="space-y-4">
+                  <div className="rounded-lg bg-gray-800 p-3 text-sm">
+                    Olá! Como posso ajudar com sua doação hoje?
+                  </div>
+                  <div className="ml-auto w-3/4 rounded-lg bg-green-500 p-3 text-sm">
+                    Posso doar iogurtes com data de vencimento para amanhã?
+                  </div>
+                  <div className="rounded-lg bg-gray-800 p-3 text-sm">
+                    Sim, desde que a cadeia de frio (0°C a 10°C) tenha sido
+                    mantida. O consumo imediato é recomendado. Deseja iniciar?
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="order-1 lg:order-2">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-500">
+              IA #4: SUPORTE 24/7
+            </p>
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
+              Orientação Contextual Instantânea
+            </h2>
+            <p className="mb-6 text-lg text-gray-600">
+              Surgiu uma dúvida no meio do processo? Nosso Chatbot especializado
+              em segurança alimentar responde perguntas sobre armazenamento,
+              transporte e legislação na hora, eliminando a incerteza da equipe
+              operacional.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
+
