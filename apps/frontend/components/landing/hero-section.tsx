@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export function HeroSection() {
   return (
@@ -53,8 +54,14 @@ export function HeroSection() {
           {/* Right: Image with Overlay */}
           <div className="relative">
             <div className="relative overflow-hidden rounded-lg bg-gray-100">
-              {/* Placeholder for image */}
-              <div className="aspect-[4/3] bg-gradient-to-br from-green-50 to-green-100" />
+              <Image
+                src="/hero.png"
+                alt="Hero"
+                width={800}
+                height={600}
+                className="aspect-[4/3] w-full object-cover"
+                priority
+              />
               
               {/* Overlay Status Box */}
               <div className="absolute bottom-4 right-4 rounded-lg bg-white/95 p-4 shadow-lg backdrop-blur">
