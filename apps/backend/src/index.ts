@@ -12,6 +12,7 @@ import { servicesPlugin } from './plugins/services.plugin';
 import { todosRoute } from './routes/todos';
 import { userRoute } from './routes/user';
 import { donationsRoute } from './routes/donations';
+import { chatRoute } from './routes/chat';
 import { createChildLogger } from './utils/logger';
 
 const logger = createChildLogger({ module: 'server' });
@@ -52,6 +53,10 @@ const app = new Elysia()
             name: 'donations',
             description: 'Donation management endpoints',
           },
+          {
+            name: 'chat',
+            description: 'Chat with AI assistant endpoints',
+          },
         ],
         components: await OpenAPI.components,
         paths: await OpenAPI.getPaths(),
@@ -91,6 +96,7 @@ const app = new Elysia()
       .use(todosRoute)
       .use(userRoute)
       .use(donationsRoute)
+      .use(chatRoute)
   )
   .listen(env.PORT || DEFAULT_PORT);
 
