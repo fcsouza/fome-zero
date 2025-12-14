@@ -4,6 +4,7 @@ import {
   Overlay as DialogOverlayPrimitive,
   Portal as DialogPortalPrimitive,
   Root as DialogPrimitive,
+  Trigger as DialogTriggerPrimitive,
 } from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import {
@@ -16,7 +17,7 @@ import { cn } from '@/lib/utils';
 
 const Sheet = DialogPrimitive;
 
-const SheetTrigger = DialogPrimitive.Trigger;
+const SheetTrigger = DialogTriggerPrimitive;
 
 const SheetClose = DialogClosePrimitive;
 
