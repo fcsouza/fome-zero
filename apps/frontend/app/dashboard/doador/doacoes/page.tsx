@@ -38,6 +38,7 @@ export default function DoadorDoacoesPage() {
   const handleDownloadCertificate = async (donationId: string) => {
     try {
       await donationsApi.downloadCertificate(donationId);
+      toast.success('Certificado baixado com sucesso!');
     } catch (error) {
       toast.error(
         error instanceof Error

@@ -6,6 +6,17 @@
 [![Equipe 17](https://img.shields.io/badge/Equipe-17-green)](https://devsdeimpacto.com.br)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 
+## 👥 Equipe
+
+**Equipe 17 - Devs de Impacto 2025**
+
+- **Fabricio Cavalcante**
+- **Gabriel Maia**
+- **Pedro Henrique**
+- **Iggor Ferreira**
+
+---
+
 ## 📋 Índice
 
 - [Sobre o Projeto](#-sobre-o-projeto)
@@ -527,17 +538,6 @@ npm run format
 ## 📄 Licença
 
 Este projeto está licenciado sob a **ISC License**. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 👥 Equipe
-
-**Equipe 17 - Devs de Impacto 2025**
-
-- **Fabricio Cavalcante**
-- **Gabriel Maia**
-- **Pedro Henrique**
-- **Iggor Ferreira**
-
----
 
 ## 🔗 Links Úteis
 
